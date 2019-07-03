@@ -1,0 +1,19 @@
+version: "3.5"
+services:
+    api:
+        image: ranger.services.operations:dev
+        container_name: operations
+        ports:
+            - "8083:8083"
+        networks:
+            - operations
+            - ranger
+
+networks:
+    ranger:
+        name: ranger-network
+        external: true
+
+    operations:
+        name: operations-network
+        external: true
