@@ -4,7 +4,7 @@ using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations {
     public class OperationCompleted : IEvent {
-        public CorrelationContext CorrelationContext { get; set; }
+        public CorrelationContext CorrelationContext { get; }
 
         [JsonConstructor]
         public OperationCompleted (CorrelationContext correlationContext) {

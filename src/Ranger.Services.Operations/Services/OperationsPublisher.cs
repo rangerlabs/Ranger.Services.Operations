@@ -9,8 +9,8 @@ namespace Ranger.Services.Operations {
             _busPublisher = busPublisher;
         }
 
-        public void Pending (CorrelationContext context) => _busPublisher.PublishAsync (new OperationPending (context));
-        public void Complete (CorrelationContext context) => _busPublisher.PublishAsync (new OperationCompleted (context));
-        public void Reject (CorrelationContext context, string message, string code) => _busPublisher.PublishAsync (new OperationRejected (context, message, code));
+        public void Pending (CorrelationContext context) => _busPublisher.Publish (new OperationPending (context));
+        public void Complete (CorrelationContext context) => _busPublisher.Publish (new OperationCompleted (context));
+        public void Reject (CorrelationContext context, string message, string code) => _busPublisher.Publish (new OperationRejected (context, message, code));
     }
 }

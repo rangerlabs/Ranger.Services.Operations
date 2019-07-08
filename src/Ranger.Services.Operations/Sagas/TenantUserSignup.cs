@@ -23,10 +23,12 @@ namespace Ranger.Services.Operations {
             }
 
             public async Task HandleAsync (TenantCreated message, ISagaContext context) {
-                this.busPublisher.SendAsync (new CreateUser ("", "", "", "", "", "", "", message.CorrelationContext));
+                var user = message.User;
+                this.busPublisher.Send (new CreateUser (user.Email, user.FirstName, user.LastName, user.PasswordHash, message.DomainName, "Owner", "", message.CorrelationContext));
             }
 
             public async Task HandleAsync (UserCreated message, ISagaContext context) {
+                logger.LogInformation ("TenantUserSignup saga completed succesfully.");
                 await CompleteAsync ();
             }
         }

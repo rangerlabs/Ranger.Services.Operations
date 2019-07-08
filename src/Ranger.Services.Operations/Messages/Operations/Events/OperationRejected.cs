@@ -4,7 +4,7 @@ using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations {
     public class OperationRejected : IEvent {
-        public CorrelationContext CorrelationContext { get; set; }
+        public CorrelationContext CorrelationContext { get; }
         public string Code { get; }
         public string Message { get; }
 

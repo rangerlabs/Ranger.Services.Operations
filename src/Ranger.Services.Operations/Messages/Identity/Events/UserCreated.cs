@@ -21,7 +21,7 @@ namespace Ranger.Services.Operations {
         public string TenantDomain { get; }
 
         public string Role { get; }
-        public CorrelationContext CorrelationContext { get; set; }
+        public CorrelationContext CorrelationContext { get; }
 
     }
 }
