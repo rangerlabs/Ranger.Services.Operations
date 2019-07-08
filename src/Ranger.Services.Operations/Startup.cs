@@ -2,6 +2,7 @@
 using System.Security.Cryptography.X509Certificates;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Chronicle;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
 using Ranger.RabbitMQ;
+using Ranger.Redis;
 using Ranger.Services.Operations.Data;
 
 namespace Ranger.Services.Operations {
@@ -67,9 +69,16 @@ namespace Ranger.Services.Operations {
                 services.AddDataProtection ();
             }
 
+            services.AddRedis ();
+            services.AddChronicle ();
+
             var builder = new ContainerBuilder ();
             builder.Populate (services);
             builder.AddRabbitMq ();
+            builder.RegisterGeneric (typeof (GenericEventHandler<>))
+                .As (typeof (IMessageHandler<>));
+            builder.RegisterGeneric (typeof (GenericCommandHandler<>))
+                .As (typeof (IMessageHandler<>));
             container = builder.Build ();
             return new AutofacServiceProvider (container);
         }
@@ -78,7 +87,8 @@ namespace Ranger.Services.Operations {
             applicationLifetime.ApplicationStopping.Register (OnShutdown);
             app.UseAuthentication ();
             app.UseMvcWithDefaultRoute ();
-            this.busSubscriber = app.UseRabbitMQ ();
+            this.busSubscriber = app.UseRabbitMQ ()
+                .SubscribeAllMessages ();
         }
 
         private void OnShutdown () {
