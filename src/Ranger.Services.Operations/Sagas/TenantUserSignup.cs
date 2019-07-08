@@ -24,7 +24,7 @@ namespace Ranger.Services.Operations {
 
             public async Task HandleAsync (TenantCreated message, ISagaContext context) {
                 var user = message.User;
-                this.busPublisher.Send (new CreateUser (user.Email, user.FirstName, user.LastName, user.PasswordHash, message.DomainName, "Owner", "", message.CorrelationContext));
+                this.busPublisher.Send (new CreateUser (user.Email, user.FirstName, user.LastName, user.Password, message.DomainName, "Owner", "", message.CorrelationContext));
             }
 
             public async Task HandleAsync (UserCreated message, ISagaContext context) {
