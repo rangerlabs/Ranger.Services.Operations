@@ -32,7 +32,7 @@ namespace Ranger.Services.Operations {
 
         public IServiceProvider ConfigureServices (IServiceCollection services) {
             services.AddMvcCore (options => {
-                    var policy = ScopePolicy.Create ("operationScope");
+                    var policy = ScopePolicy.Create ("operationsScope");
                     options.Filters.Add (new AuthorizeFilter (policy));
                 })
                 .AddAuthorization ()
@@ -60,14 +60,9 @@ namespace Ranger.Services.Operations {
                     options.RequireHttpsMetadata = false;
                 });
 
-            if (Environment.GetEnvironmentVariable ("ASPNETCORE_ENVIRONMENT") == EnvironmentName.Production) {
-                services.AddDataProtection ()
-                    .ProtectKeysWithCertificate (new X509Certificate2 (configuration["DataProtectionCertPath:Path"]))
-                    .PersistKeysToDbContext<OperationsDbContext> ();
-                this.logger.LogInformation ("Production data protection certificate loaded.");
-            } else {
-                services.AddDataProtection ();
-            }
+            services.AddDataProtection ()
+                .ProtectKeysWithCertificate (new X509Certificate2 (configuration["DataProtectionCertPath:Path"]))
+                .PersistKeysToDbContext<OperationsDbContext> ();
 
             services.AddRedis ();
             services.AddChronicle ();
