@@ -43,7 +43,7 @@ namespace Ranger.Services.Operations {
                 });
 
             services.AddEntityFrameworkNpgsql ().AddDbContext<OperationsDbContext> (options => {
-                    options.UseNpgsql (configuration["CloudSql:OperationsConnectionString"]);
+                    options.UseNpgsql (configuration["cloudSql:ConnectionString"]);
                 },
                 ServiceLifetime.Transient
             );

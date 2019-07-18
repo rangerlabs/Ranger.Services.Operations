@@ -12,7 +12,7 @@ namespace Ranger.Services.Operations.Data {
                 .Build ();
 
             var options = new DbContextOptionsBuilder<OperationsDbContext> ();
-            options.UseNpgsql (config["CloudSql:OperationsConnectionString"]);
+            options.UseNpgsql (config["cloudSql:ConnectionString"]);
 
             return new OperationsDbContext (options.Options);
         }

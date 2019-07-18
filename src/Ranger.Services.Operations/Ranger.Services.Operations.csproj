@@ -17,10 +17,10 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.2.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="2.2.4" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.4.0" />
-    <PackageReference Include="Ranger.Common" Version="1.0.0" />
-    <PackageReference Include="Ranger.Monitoring" Version="1.0.0" />
-    <PackageReference Include="Ranger.RabbitMQ" Version="1.0.3" />
-    <PackageReference Include="Ranger.Redis" Version="1.0.1" />
+    <PackageReference Include="Ranger.Common" Version="1.0.20" />
+    <PackageReference Include="Ranger.Monitoring" Version="1.0.1" />
+    <PackageReference Include="Ranger.RabbitMQ" Version="1.0.4" />
+    <PackageReference Include="Ranger.Redis" Version="1.0.2" />
     <PackageReference Include="Chronicle_" Version="2.0.1" />
   </ItemGroup>
   <ItemGroup>
