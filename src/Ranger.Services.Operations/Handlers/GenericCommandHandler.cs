@@ -10,12 +10,12 @@ namespace Ranger.Services.Operations {
             public GenericCommandHandler (ISagaCoordinator sagaCoordinator) {
                 this.sagaCoordinator = sagaCoordinator;
             }
-            public async Task HandleAsync (TCommand command) {
+            public async Task HandleAsync (TCommand command, ICorrelationContext context) {
                 if (!command.BelongsToSaga ()) {
                     return;
                 }
 
-                var sagaContext = SagaContext.FromCorrelationContext (command.CorrelationContext);
+                var sagaContext = SagaContext.FromCorrelationContext (context);
                 await sagaCoordinator.ProcessAsync (command, context : sagaContext);
             }
         }

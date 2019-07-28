@@ -21,12 +21,14 @@ using Ranger.Services.Operations.Data;
 namespace Ranger.Services.Operations {
     public class Startup {
         private readonly IConfiguration configuration;
+        private readonly ILoggerFactory loggerFactory;
         private readonly ILogger<Startup> logger;
         private IContainer container;
         private IBusSubscriber busSubscriber;
 
-        public Startup (IConfiguration configuration, ILogger<Startup> logger) {
+        public Startup (IConfiguration configuration, ILoggerFactory loggerFactory, ILogger<Startup> logger) {
             this.configuration = configuration;
+            this.loggerFactory = loggerFactory;
             this.logger = logger;
         }
 
@@ -69,7 +71,7 @@ namespace Ranger.Services.Operations {
 
             var builder = new ContainerBuilder ();
             builder.Populate (services);
-            builder.AddRabbitMq ();
+            builder.AddRabbitMq (loggerFactory);
             builder.RegisterGeneric (typeof (GenericEventHandler<>))
                 .As (typeof (IMessageHandler<>));
             builder.RegisterGeneric (typeof (GenericCommandHandler<>))

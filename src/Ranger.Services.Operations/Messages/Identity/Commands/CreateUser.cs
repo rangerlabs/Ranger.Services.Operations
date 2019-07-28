@@ -3,7 +3,7 @@ using Ranger.RabbitMQ;
 namespace Ranger.Services.Operations {
     [MessageNamespaceAttribute ("identity")]
     public class CreateUser : ICommand {
-        public CreateUser (string email, string firstName, string lastName, string password, string domainName, string role, string phoneNumber, CorrelationContext correlationContext) {
+        public CreateUser (string email, string firstName, string lastName, string password, string domainName, string role, string phoneNumber) {
             this.Email = email;
             this.FirstName = firstName;
             this.LastName = lastName;
@@ -11,7 +11,6 @@ namespace Ranger.Services.Operations {
             this.DomainName = domainName;
             this.Role = role;
             this.PhoneNumber = phoneNumber;
-            this.CorrelationContext = correlationContext;
         }
         public string Email { get; }
         public string FirstName { get; }
@@ -20,7 +19,6 @@ namespace Ranger.Services.Operations {
         public string DomainName { get; }
         public string Role { get; }
         public string PhoneNumber { get; }
-        public CorrelationContext CorrelationContext { get; }
 
     }
 }

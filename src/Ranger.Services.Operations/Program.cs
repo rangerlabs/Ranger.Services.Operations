@@ -37,8 +37,8 @@ namespace Ranger.Services.Operations {
         public static IWebHostBuilder CreateWebHostBuilder (string serverBindingUrl, string[] args) =>
             WebHost.CreateDefaultBuilder (args)
             .UseUrls (serverBindingUrl)
-            .UseStartup<Startup> ()
             .UseLogging ()
+            .UseStartup<Startup> ()
             .ConfigureServices (services => services.AddAutofac ());
     }
 }

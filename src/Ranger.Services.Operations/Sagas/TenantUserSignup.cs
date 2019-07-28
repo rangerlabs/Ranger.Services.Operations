@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
@@ -18,12 +19,28 @@ namespace Ranger.Services.Operations {
             }
 
             public async Task HandleAsync (TenantCreated message, ISagaContext context) {
-                Data.User = message.User;
-                Data.Domain = message.DomainName;
-                this.busPublisher.Send (new InitializeTenant (message.CorrelationContext, message.DatabaseUsername, message.DatabasePassword));
+                await Task.Run (() => {
+                    Data.User = message.User;
+                    Data.Domain = message.DomainName;
+                    this.busPublisher.Send (new InitializeTenant (message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId (Guid.Parse (context.SagaId)));
+                });
             }
+
             public async Task HandleAsync (IdentityTenantInitialized message, ISagaContext context) {
-                this.busPublisher.Send (new CreateUser (Data.User.Email, Data.User.FirstName, Data.User.LastName, Data.User.Password, Data.Domain, "Owner", "", message.CorrelationContext));
+                await Task.Run (() =>
+                    this.busPublisher.Send (
+                        new CreateUser (
+                            Data.User.Email,
+                            Data.User.FirstName,
+                            Data.User.LastName,
+                            Data.User.Password,
+                            Data.Domain,
+                            "Owner",
+                            ""
+                        ),
+                        CorrelationContext.FromId (Guid.Parse (context.SagaId))
+                    )
+                );
             }
 
             public async Task CompensateAsync (IdentityTenantInitialized message, ISagaContext context) {
@@ -39,7 +56,7 @@ namespace Ranger.Services.Operations {
             }
 
             public async Task CompensateAsync (TenantCreated message, ISagaContext context) {
-                logger.LogInformation ("Performing TenantCreated Compensate.");
+                await Task.Run (() => logger.LogInformation ("Performing TenantCreated Compensate."));
             }
 
             public async Task HandleAsync (UserCreated message, ISagaContext context) {
@@ -48,7 +65,7 @@ namespace Ranger.Services.Operations {
             }
 
             public async Task CompensateAsync (UserCreated message, ISagaContext context) {
-                logger.LogInformation ("Performing UserCreated Compensate.");
+                await Task.Run (() => logger.LogInformation ("Performing UserCreated Compensate."));
             }
         }
 

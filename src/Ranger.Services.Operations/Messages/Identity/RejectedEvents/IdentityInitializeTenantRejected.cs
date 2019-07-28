@@ -3,12 +3,10 @@ using Ranger.RabbitMQ;
 namespace Ranger.Services.Operations {
     [MessageNamespaceAttribute ("identity")]
     public class IdentityInitializeTenantRejected : IRejectedEvent {
-        public CorrelationContext CorrelationContext { get; }
         public string Reason { get; }
         public string Code { get; }
 
-        public IdentityInitializeTenantRejected (CorrelationContext correlationContext, string reason, string code) {
-            this.CorrelationContext = correlationContext;
+        public IdentityInitializeTenantRejected (string reason, string code) {
             this.Reason = reason;
             this.Code = code;
         }
