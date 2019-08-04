@@ -1,6 +1,6 @@
 namespace Ranger.Services.Operations {
-    public class User {
-        public User (string email, string firstName, string lastName, string password) {
+    public class NewTenantOwner {
+        public NewTenantOwner (string email, string firstName, string lastName, string password) {
             this.Email = email;
             this.FirstName = firstName;
             this.LastName = lastName;

@@ -2,8 +2,8 @@ using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations {
     [MessageNamespaceAttribute ("identity")]
-    public class UserCreated : IEvent {
-        public UserCreated (string email, string firstName, string lastName, string tenantDomain, string role) {
+    public class NewTenantOwnerCreated : IEvent {
+        public NewTenantOwnerCreated (string email, string firstName, string lastName, string tenantDomain, string role) {
             this.Email = email;
             this.FirstName = firstName;
             this.LastName = lastName;

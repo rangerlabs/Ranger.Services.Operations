@@ -9,7 +9,7 @@ namespace Ranger.Services.Operations {
         ISagaStartAction<TenantCreated>,
         ISagaAction<IdentityTenantInitialized>,
         ISagaAction<IdentityInitializeTenantRejected>,
-        ISagaAction<UserCreated> {
+        ISagaAction<NewTenantOwnerCreated> {
             private readonly IBusPublisher busPublisher;
             private readonly ILogger<TenantUserSignup> logger;
 
@@ -20,7 +20,7 @@ namespace Ranger.Services.Operations {
 
             public async Task HandleAsync (TenantCreated message, ISagaContext context) {
                 await Task.Run (() => {
-                    Data.User = message.User;
+                    Data.Owner = message.Owner;
                     Data.Domain = message.DomainName;
                     this.busPublisher.Send (new InitializeTenant (message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId (Guid.Parse (context.SagaId)));
                 });
@@ -29,13 +29,12 @@ namespace Ranger.Services.Operations {
             public async Task HandleAsync (IdentityTenantInitialized message, ISagaContext context) {
                 await Task.Run (() =>
                     this.busPublisher.Send (
-                        new CreateUser (
-                            Data.User.Email,
-                            Data.User.FirstName,
-                            Data.User.LastName,
-                            Data.User.Password,
+                        new CreateNewTenantOwner (
+                            Data.Owner.Email,
+                            Data.Owner.FirstName,
+                            Data.Owner.LastName,
+                            Data.Owner.Password,
                             Data.Domain,
-                            "Owner",
                             ""
                         ),
                         CorrelationContext.FromId (Guid.Parse (context.SagaId))
@@ -59,18 +58,18 @@ namespace Ranger.Services.Operations {
                 await Task.Run (() => logger.LogInformation ("Performing TenantCreated Compensate."));
             }
 
-            public async Task HandleAsync (UserCreated message, ISagaContext context) {
+            public async Task HandleAsync (NewTenantOwnerCreated message, ISagaContext context) {
                 logger.LogInformation ("TenantUserSignup saga completed succesfully.");
                 await CompleteAsync ();
             }
 
-            public async Task CompensateAsync (UserCreated message, ISagaContext context) {
-                await Task.Run (() => logger.LogInformation ("Performing UserCreated Compensate."));
+            public async Task CompensateAsync (NewTenantOwnerCreated message, ISagaContext context) {
+                await Task.Run (() => logger.LogInformation ("Performing NewTenantOwnerCreated Compensate."));
             }
         }
 
     public class UserData {
-        public User User { get; set; }
+        public NewTenantOwner Owner { get; set; }
         public string Domain { get; set; }
     }
 }
