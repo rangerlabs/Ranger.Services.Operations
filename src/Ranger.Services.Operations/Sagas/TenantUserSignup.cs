@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
+using PusherServer;
 using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations {
@@ -59,6 +60,23 @@ namespace Ranger.Services.Operations {
             }
 
             public async Task HandleAsync (NewTenantOwnerCreated message, ISagaContext context) {
+                var options = new PusherOptions {
+                    Cluster = "us2",
+                    Encrypted = true
+                };
+
+                var pusher = new Pusher (
+                    "828034",
+                    "aed7ba7c7247aca9680e",
+                    "df532af7ccf602593aa5",
+                    options);
+
+                var result = await pusher.TriggerAsync (
+                    "ranger-labs",
+                    "registration-event",
+                    new { domain = Data.Domain, correlationId = context.SagaId.Id, status = OperationState.Completed }
+                );
+
                 logger.LogInformation ("TenantUserSignup saga completed succesfully.");
                 await CompleteAsync ();
             }
