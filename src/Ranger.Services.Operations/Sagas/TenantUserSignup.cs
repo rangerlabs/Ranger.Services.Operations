@@ -10,7 +10,8 @@ namespace Ranger.Services.Operations {
         ISagaStartAction<TenantCreated>,
         ISagaAction<IdentityTenantInitialized>,
         ISagaAction<IdentityInitializeTenantRejected>,
-        ISagaAction<NewTenantOwnerCreated> {
+        ISagaAction<NewTenantOwnerCreated>,
+        ISagaAction<SendNewTenantOwnerEmailSent> {
             private readonly IBusPublisher busPublisher;
             private readonly ILogger<TenantUserSignup> logger;
 
@@ -60,6 +61,18 @@ namespace Ranger.Services.Operations {
             }
 
             public async Task HandleAsync (NewTenantOwnerCreated message, ISagaContext context) {
+                await Task.Run (() => {
+                    busPublisher.Send (new SendNewTenantOwnerEmail (Data.Owner.Email, Data.Owner.FirstName, Data.Domain, ""),
+                        CorrelationContext.FromId (Guid.Parse (context.SagaId))
+                    );
+                });
+            }
+
+            public async Task CompensateAsync (NewTenantOwnerCreated message, ISagaContext context) {
+                await Task.Run (() => logger.LogInformation ("Performing NewTenantOwnerCreated Compensate."));
+            }
+
+            public async Task HandleAsync (SendNewTenantOwnerEmailSent message, ISagaContext context) {
                 var options = new PusherOptions {
                     Cluster = "us2",
                     Encrypted = true
@@ -81,8 +94,8 @@ namespace Ranger.Services.Operations {
                 await CompleteAsync ();
             }
 
-            public async Task CompensateAsync (NewTenantOwnerCreated message, ISagaContext context) {
-                await Task.Run (() => logger.LogInformation ("Performing NewTenantOwnerCreated Compensate."));
+            public async Task CompensateAsync (SendNewTenantOwnerEmailSent message, ISagaContext context) {
+                await RejectAsync ();
             }
         }
 
