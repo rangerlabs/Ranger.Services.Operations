@@ -1,5 +1,5 @@
 namespace Ranger.Services.Operations {
-    public enum OperationState {
+    public enum OperationStateEnum {
         Pending,
         Rejected,
         Completed

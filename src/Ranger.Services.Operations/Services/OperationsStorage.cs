@@ -11,7 +11,7 @@ namespace Ranger.Services.Operations {
             _cache = cache;
         }
 
-        public async Task SetAsync (Guid id, Guid userId, string name, OperationState state,
+        public async Task SetAsync (Guid id, Guid userId, string name, OperationStateEnum state,
             string resource, string code = null, string reason = null) {
             var newState = state.ToString ().ToLowerInvariant ();
             var operation = await GetAsync (id);
