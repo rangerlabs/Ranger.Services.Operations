@@ -6,6 +6,7 @@ services:
 branches:
     only:
         - master
+        - dev
 before_script:
     - chmod -R a+x scripts
 script:
@@ -13,6 +14,6 @@ script:
 after_success:
     - "./scripts/travis-docker-publish.sh"
 notifications:
-    email:
-        on_success: never
-        on_failure: never
+    email: false
+    slack:
+        secure: ixcKXZ4pZD5I5YJ6SkXoSdxL1GG7XAlLm1+IOk1srzHw2/ybD0Uv4BiAIBux0S/W06sr8UGGpdC7cB4hhMZn3uxqqbC8i+mOrl5PIMLPO5avLwrMt8p51zUZZKo0j/PQd4fSeLDSvZsEF/4TdqrlFxMGL3hfR+gdMtlrEonwORdYeWxTKzDtCOrVerKKaCU8jRSuwjar3aqy2YRNtgiAlCUWKsG6vLSBOUrKdLjErPWg4bucFQnAfjpjaZIzZgTxD2b3O9uvzv+sercfjDZ0CAIXfgd4EqBSyHQQltwr6zr4AD7zTPI+/1yH1SY/l4Rs9rHgKKdYwQcpk3F/M7Gp+SL8q96EOs2CZC3UrrBNXd0ap0rR3ejMhL3ZI3MwwyNR0y03EtAAPgn7AVtEgTVWo8WTpIeygyH9N4mb3WS4ni4WIPJm0o93JtTWRjMLXqYY8VRz9BYqhGEZwLU4DahGV6VLeF3LhetjNHvFBQTvCoeHikIG3NsUWvF1sLb+zIgXauUkxIsodEOavNrtH2EgTzV5KcphjHNYewU70X52Bpc+K/tON0k7CcFhLudMoqLm0gWjki4hea/pYE3EeUA0qxk64ohjJhumtC1wohKxuLhd8lPyImbmfiRRCF+qSWk5qcbyKln4bB29Gio9b6RO93GtP4wLv2V1XRJawx2vBqI=
