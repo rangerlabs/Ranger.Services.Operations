@@ -4,6 +4,7 @@ WORKDIR /app
 ARG MYGET_API_KEY
 ARG BUILD_CONFIG="Release"
 
+RUN mkdir -p /app/vsdbg && touch /app/vsdbg/touched
 ENV DEBIAN_FRONTEND noninteractive
 RUN if [ "${BUILD_CONFIG}" = "Debug" ]; then \
     apt-get update && \
@@ -24,7 +25,6 @@ RUN dotnet publish -c ${BUILD_CONFIG} -o /app/published
 FROM microsoft/dotnet:aspnetcore-runtime
 WORKDIR /app
 COPY --from=build-env /app/published .
-COPY --from=build-env /app/vsdbg ./vsdbg
 
 ARG BUILD_CONFIG="Release"
 ARG ASPNETCORE_ENVIRONMENT="Production"
