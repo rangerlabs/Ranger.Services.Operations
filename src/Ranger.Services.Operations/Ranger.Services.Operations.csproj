@@ -21,13 +21,14 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="2.2.4" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.4.0" />
     <PackageReference Include="PusherServer" Version="4.2.0" />
-    <PackageReference Include="Ranger.Common" Version="1.0.24" />
+    <PackageReference Include="Ranger.Common" Version="1.0.25" />
     <PackageReference Include="Ranger.Monitoring" Version="1.0.1" />
     <PackageReference Include="Ranger.RabbitMQ" Version="1.0.34" />
-    <PackageReference Include="Ranger.Redis" Version="1.0.2" />
+    <PackageReference Include="Ranger.Redis" Version="1.0.5" />
     <PackageReference Include="Chronicle_" Version="2.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ranger.Services.Operations.Data\Ranger.Services.Operations.Data.csproj" />
+    <ProjectReference Include="..\Chronicle\src\Chronicle\Chronicle.csproj" />
   </ItemGroup>
 </Project>
