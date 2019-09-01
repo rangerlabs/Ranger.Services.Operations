@@ -1,9 +1,12 @@
 using Ranger.RabbitMQ;
 
-namespace Ranger.Services.Operations {
-    [MessageNamespace ("tenants")]
-    public class TenantCreated : IEvent {
-        public TenantCreated (CorrelationContext correlationContext, string domainName, string databaseUsername, string databasePassword, NewTenantOwner owner) {
+namespace Ranger.Services.Operations.Messages.Tenants
+{
+    [MessageNamespace("tenants")]
+    public class TenantCreated : IEvent
+    {
+        public TenantCreated(CorrelationContext correlationContext, string domainName, string databaseUsername, string databasePassword, NewTenantOwner owner)
+        {
             this.CorrelationContext = correlationContext;
             this.DomainName = domainName;
             this.DatabaseUsername = databaseUsername;

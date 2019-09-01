@@ -1,8 +1,8 @@
 using Ranger.RabbitMQ;
 
-namespace Ranger.Services.Operations
+namespace Ranger.Services.Operations.Messages.Identity
 {
-    [MessageNamespace("operations")]
+    [MessageNamespace("identity")]
     public class DropTenant : ICommand
     {
         public string DatabaseUsername { get; }

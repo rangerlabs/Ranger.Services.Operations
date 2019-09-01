@@ -1,9 +1,12 @@
 using Ranger.RabbitMQ;
 
-namespace Ranger.Services.Operations {
-    [MessageNamespaceAttribute ("identity")]
-    public class CreateNewTenantOwner : ICommand {
-        public CreateNewTenantOwner (string email, string firstName, string lastName, string password, string domainName, string phoneNumber) {
+namespace Ranger.Services.Operations.Messages.Identity
+{
+    [MessageNamespaceAttribute("identity")]
+    public class CreateNewTenantOwner : ICommand
+    {
+        public CreateNewTenantOwner(string email, string firstName, string lastName, string password, string domainName, string phoneNumber)
+        {
             this.Email = email;
             this.FirstName = firstName;
             this.LastName = lastName;

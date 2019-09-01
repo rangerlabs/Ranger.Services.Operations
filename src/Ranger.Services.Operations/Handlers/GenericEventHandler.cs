@@ -9,7 +9,7 @@ namespace Ranger.Services.Operations
     {
         private readonly ISagaCoordinator sagaCoordinator;
 
-        public GenericEventHandler(ISagaCoordinator sagaCoordinator, IOperationsPublisher operationPublisher, IOperationsStorage operationsStorage)
+        public GenericEventHandler(ISagaCoordinator sagaCoordinator)
         {
             this.sagaCoordinator = sagaCoordinator;
         }

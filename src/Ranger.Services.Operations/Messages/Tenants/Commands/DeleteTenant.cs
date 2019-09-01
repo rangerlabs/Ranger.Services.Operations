@@ -1,6 +1,6 @@
 using Ranger.RabbitMQ;
 
-namespace Ranger.Services.Operations
+namespace Ranger.Services.Operations.Messages.Tenants
 {
     [MessageNamespace("tenants")]
     public class DeleteTenant : ICommand

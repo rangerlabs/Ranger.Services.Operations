@@ -78,10 +78,9 @@ namespace Ranger.Services.Operations
                 .ProtectKeysWithCertificate(new X509Certificate2(configuration["DataProtectionCertPath:Path"]))
                 .PersistKeysToDbContext<OperationsDbContext>();
 
-            services.AddOptions<RangerPusherOptions>("pusher");
             services.AddSingleton<IPusher>(s =>
             {
-                var options = s.GetService<RangerPusherOptions>();
+                var options = configuration.GetOptions<RangerPusherOptions>("pusher");
                 return new Pusher(options.AppId, options.Key, options.Secret, new PusherOptions { Cluster = options.Cluster, Encrypted = bool.Parse(options.Encrypted) });
             });
             services.AddSingleton<IOperationsPublisher, OperationsPublisher>();
