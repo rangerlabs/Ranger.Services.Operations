@@ -25,10 +25,9 @@
     <PackageReference Include="Ranger.Monitoring" Version="1.0.1" />
     <PackageReference Include="Ranger.RabbitMQ" Version="1.0.44" />
     <PackageReference Include="Ranger.Redis" Version="1.0.5" />
-    <PackageReference Include="Chronicle_" Version="2.0.1" />
+    <PackageReference Include="Chronicle" Version="2.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ranger.Services.Operations.Data\Ranger.Services.Operations.Data.csproj" />
-    <!-- <ProjectReference Include="..\Chronicle\src\Chronicle\Chronicle.csproj" /> -->
   </ItemGroup>
 </Project>
