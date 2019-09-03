@@ -15,14 +15,14 @@ namespace Ranger.Services.Operations
             _cache = cache;
         }
 
-        public async Task SetAsync(Guid id, Guid userId, string name, OperationsStateEnum state,
+        public async Task SetAsync(Guid id, Guid userEmail, string name, OperationsStateEnum state,
             string resource, string code = null, string reason = null)
         {
             var newState = state.ToString().ToLowerInvariant();
             var operation = await GetAsync(id);
             operation = operation ?? new OperationDto();
             operation.Id = id;
-            operation.UserId = userId;
+            operation.UserEmail = userEmail;
             operation.Name = name;
             operation.State = newState;
             operation.Resource = resource;

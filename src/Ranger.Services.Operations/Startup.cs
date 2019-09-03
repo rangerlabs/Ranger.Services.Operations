@@ -7,17 +7,13 @@ using Chronicle.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using PusherServer;
-using Ranger.Common;
 using Ranger.RabbitMQ;
 using Ranger.Redis;
 using Ranger.Services.Operations.Data;
@@ -78,16 +74,12 @@ namespace Ranger.Services.Operations
                 .ProtectKeysWithCertificate(new X509Certificate2(configuration["DataProtectionCertPath:Path"]))
                 .PersistKeysToDbContext<OperationsDbContext>();
 
-            services.AddSingleton<IPusher>(s =>
-            {
-                var options = configuration.GetOptions<RangerPusherOptions>("pusher");
-                return new Pusher(options.AppId, options.Key, options.Secret, new PusherOptions { Cluster = options.Cluster, Encrypted = bool.Parse(options.Encrypted) });
-            });
-            services.AddSingleton<IOperationsPublisher, OperationsPublisher>();
+
             services.AddRedis(logger);
             services.AddChronicle(b =>
             {
-                b.UseRedisPersistence();
+                b.UseSagaLog<RedisEncryptedSagaLog>();
+                b.UseSagaStateRepository<RedisEncryptedSagaStateRepository>();
                 b.DeleteOnCompleted();
             });
 

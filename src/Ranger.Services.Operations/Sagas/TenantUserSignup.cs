@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
-using PusherServer;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
-using Ranger.Services.Operations.Messages.Geofences;
 using Ranger.Services.Operations.Messages.Identity;
 using Ranger.Services.Operations.Messages.Notifications;
 using Ranger.Services.Operations.Messages.Tenants;
@@ -24,13 +22,11 @@ namespace Ranger.Services.Operations
     {
         const int SERVICES_TO_BE_INITIALIZED = 2;
         private readonly IBusPublisher busPublisher;
-        private readonly IOperationsPublisher publisher;
         private readonly ILogger<TenantUserSignup> logger;
 
-        public TenantUserSignup(IBusPublisher busPublisher, IOperationsPublisher publisher, ILogger<TenantUserSignup> logger)
+        public TenantUserSignup(IBusPublisher busPublisher, ILogger<TenantUserSignup> logger)
         {
             this.busPublisher = busPublisher;
-            this.publisher = publisher;
             this.logger = logger;
         }
 
@@ -110,7 +106,12 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(SendNewTenantOwnerEmailSent message, ISagaContext context)
         {
-            await publisher.SendRangerLabsStatusUpdate(context, Data.Domain, OperationsStateEnum.Completed);
+            busPublisher.Publish<SendPusherFrontendNotification>(
+                new SendPusherFrontendNotification(typeof(SendNewTenantOwnerEmailSent).Name,
+                    Data.Domain,
+                    Data.Owner.Email,
+                    OperationsStateEnum.Completed),
+                CorrelationContext.FromId(Guid.Parse(context.SagaId)));
 
             logger.LogInformation("TenantUserSignup saga completed succesfully.");
             await CompleteAsync();
