@@ -29,8 +29,8 @@ namespace Ranger.Services.Operations
             switch (@event)
             {
                 case IRejectedEvent rejectedSingleEvent:
-                    busPublisher.Publish<SendPusherFrontendNotification>(
-                        new SendPusherFrontendNotification(
+                    busPublisher.Send<SendPusherPrivateFrontendNotification>(
+                        new SendPusherPrivateFrontendNotification(
                             rejectedSingleEvent.GetType().Name,
                             context.Domain,
                             context.UserEmail,
@@ -38,8 +38,8 @@ namespace Ranger.Services.Operations
                         context);
                     return;
                 case IEvent completedSingleEvent:
-                    busPublisher.Publish<SendPusherFrontendNotification>(
-                        new SendPusherFrontendNotification(
+                    busPublisher.Send<SendPusherPrivateFrontendNotification>(
+                        new SendPusherPrivateFrontendNotification(
                             completedSingleEvent.GetType().Name,
                             context.Domain,
                             context.UserEmail,

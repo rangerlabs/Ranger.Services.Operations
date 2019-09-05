@@ -33,10 +33,10 @@ namespace Chronicle.Persistence
             List<SagaLogData> sagaLogDatas = new List<SagaLogData>();
             IEnumerable<SagaLogData> serializedSagaLogDatas = new List<SagaLogData>();
             var cachedSagaLogDatasString = await cache.GetStringAsync(LogId(id, sagaType));
-            var unProtectedCachedSagaLogDatasString = dataProtector.Unprotect(cachedSagaLogDatasString);
             if (!String.IsNullOrWhiteSpace(cachedSagaLogDatasString))
             {
-                sagaLogDatas = JsonConvert.DeserializeObject<List<SagaLogData>>(cachedSagaLogDatasString);
+                var unProtectedCachedSagaLogDatasString = dataProtector.Unprotect(cachedSagaLogDatasString);
+                sagaLogDatas = JsonConvert.DeserializeObject<List<SagaLogData>>(unProtectedCachedSagaLogDatasString);
                 serializedSagaLogDatas = sagaLogDatas.Select(s =>
                 {
                     var message = (s.Message as JObject).ToObject(s.MessageType);
@@ -57,7 +57,7 @@ namespace Chronicle.Persistence
 
             var sagaLogDatasString = JsonConvert.SerializeObject(sagaLogDatas);
             var protectedSagaLogDatasString = dataProtector.Protect(sagaLogDatasString);
-            await cache.SetStringAsync(LogId(logData.SagaId, logData.SagaType), sagaLogDatasString);
+            await cache.SetStringAsync(LogId(logData.SagaId, logData.SagaType), protectedSagaLogDatasString);
 
             await Task.CompletedTask;
         }

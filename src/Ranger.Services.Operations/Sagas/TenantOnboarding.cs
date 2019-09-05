@@ -11,7 +11,7 @@ using Ranger.Services.Operations.Messages.Tenants;
 
 namespace Ranger.Services.Operations
 {
-    public class TenantUserSignup : Saga<UserData>,
+    public class TenantOnboarding : Saga<UserData>,
         ISagaStartAction<TenantCreated>,
         ISagaAction<Messages.Identity.TenantInitialized>,
         ISagaAction<Messages.Geofences.TenantInitialized>,
@@ -22,9 +22,9 @@ namespace Ranger.Services.Operations
     {
         const int SERVICES_TO_BE_INITIALIZED = 2;
         private readonly IBusPublisher busPublisher;
-        private readonly ILogger<TenantUserSignup> logger;
+        private readonly ILogger<TenantOnboarding> logger;
 
-        public TenantUserSignup(IBusPublisher busPublisher, ILogger<TenantUserSignup> logger)
+        public TenantOnboarding(IBusPublisher busPublisher, ILogger<TenantOnboarding> logger)
         {
             this.busPublisher = busPublisher;
             this.logger = logger;
@@ -106,10 +106,10 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(SendNewTenantOwnerEmailSent message, ISagaContext context)
         {
-            busPublisher.Publish<SendPusherFrontendNotification>(
-                new SendPusherFrontendNotification(typeof(SendNewTenantOwnerEmailSent).Name,
+            busPublisher.Send<SendPusherDomainFrontendNotification>(
+                new SendPusherDomainFrontendNotification(
+                    "TenantOnboarding",
                     Data.Domain,
-                    Data.Owner.Email,
                     OperationsStateEnum.Completed),
                 CorrelationContext.FromId(Guid.Parse(context.SagaId)));
 

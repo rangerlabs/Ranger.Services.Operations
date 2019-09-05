@@ -37,10 +37,10 @@ namespace Ranger.Services.Operations
 
             ISagaState state = null;
             var cachedSagaState = await _cache.GetStringAsync(StateId(sagaId, sagaType));
-            var unProtectedCachedSagaState = dataProtector.Unprotect(cachedSagaState);
             if (!String.IsNullOrWhiteSpace(cachedSagaState))
             {
-                state = JsonConvert.DeserializeObject<SagaState>(cachedSagaState);
+                var unProtectedCachedSagaState = dataProtector.Unprotect(cachedSagaState);
+                state = JsonConvert.DeserializeObject<SagaState>(unProtectedCachedSagaState);
                 if (dataType != null)
                 {
                     state.Update(state.State, (state.Data as JObject).ToObject(dataType));
@@ -58,7 +58,7 @@ namespace Ranger.Services.Operations
 
             var sagaStateString = JsonConvert.SerializeObject(state);
             var protectedSagaStateString = dataProtector.Protect(sagaStateString);
-            await _cache.SetStringAsync(StateId(state.SagaId, state.SagaType), sagaStateString);
+            await _cache.SetStringAsync(StateId(state.SagaId, state.SagaType), protectedSagaStateString);
             await Task.CompletedTask;
         }
 
