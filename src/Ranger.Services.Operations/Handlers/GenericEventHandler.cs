@@ -1,22 +1,52 @@
 using System.Threading.Tasks;
 using Chronicle;
 using Ranger.RabbitMQ;
+using Ranger.Services.Operations.Data;
 
-namespace Ranger.Services.Operations {
+namespace Ranger.Services.Operations
+{
     public class GenericEventHandler<TEvent> : IEventHandler<TEvent>
-        where TEvent : class, IEvent {
-            private readonly ISagaCoordinator sagaCoordinator;
+        where TEvent : class, IEvent
+    {
+        private readonly ISagaCoordinator sagaCoordinator;
+        private readonly IBusPublisher busPublisher;
+        private readonly ISagaStateRepository repository;
 
-            public GenericEventHandler (ISagaCoordinator sagaCoordinator) {
-                this.sagaCoordinator = sagaCoordinator;
+        public GenericEventHandler(ISagaCoordinator sagaCoordinator, IBusPublisher busPublisher, ISagaStateRepository repository)
+        {
+            this.sagaCoordinator = sagaCoordinator;
+            this.busPublisher = busPublisher;
+            this.repository = repository;
+        }
+        public async Task HandleAsync(TEvent @event, ICorrelationContext context)
+        {
+            if (@event.BelongsToSaga())
+            {
+                var sagaContext = SagaContext.FromCorrelationContext(context);
+                await sagaCoordinator.ProcessAsync(@event, context: sagaContext);
             }
-            public async Task HandleAsync (TEvent command, ICorrelationContext context) {
-                if (!command.BelongsToSaga ()) {
-                    return;
-                }
 
-                var sagaContext = SagaContext.FromCorrelationContext (context);
-                await sagaCoordinator.ProcessAsync (command, context : sagaContext);
+            switch (@event)
+            {
+                case IRejectedEvent rejectedSingleEvent:
+                    busPublisher.Send<SendPusherPrivateFrontendNotification>(
+                        new SendPusherPrivateFrontendNotification(
+                            rejectedSingleEvent.GetType().Name,
+                            context.Domain,
+                            context.UserEmail,
+                            OperationsStateEnum.Rejected),
+                        context);
+                    return;
+                case IEvent completedSingleEvent:
+                    busPublisher.Send<SendPusherPrivateFrontendNotification>(
+                        new SendPusherPrivateFrontendNotification(
+                            completedSingleEvent.GetType().Name,
+                            context.Domain,
+                            context.UserEmail,
+                            OperationsStateEnum.Rejected),
+                        context);
+                    return;
             }
         }
+    }
 }
