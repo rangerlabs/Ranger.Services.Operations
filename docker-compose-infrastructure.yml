@@ -12,15 +12,6 @@ services:
             - operations
         volumes:
             - postgres:/data/db
-    redis:
-        image: redis
-        container_name: operations_redis
-        ports:
-            - "6379:6379"
-        networks:
-            - operations
-        volumes:
-            - redis:/data
 
 networks:
     operations:
@@ -29,6 +20,4 @@ networks:
 
 volumes:
     postgres:
-        driver: local
-    redis:
         driver: local

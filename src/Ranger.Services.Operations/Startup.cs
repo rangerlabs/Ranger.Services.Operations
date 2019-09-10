@@ -15,7 +15,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
 using Ranger.RabbitMQ;
-using Ranger.Redis;
 using Ranger.Services.Operations.Data;
 
 namespace Ranger.Services.Operations
@@ -75,11 +74,10 @@ namespace Ranger.Services.Operations
                 .PersistKeysToDbContext<OperationsDbContext>();
 
 
-            services.AddRedis(logger);
             services.AddChronicle(b =>
             {
-                b.UseSagaLog<RedisEncryptedSagaLog>();
-                b.UseSagaStateRepository<RedisEncryptedSagaStateRepository>();
+                b.UseSagaLog<EntityFrameworkSagaLogRepository>();
+                b.UseSagaStateRepository<EntityFrameworkSagaStateRepository>();
                 b.DeleteOnCompleted();
             });
 

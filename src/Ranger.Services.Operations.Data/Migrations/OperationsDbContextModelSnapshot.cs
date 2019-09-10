@@ -35,6 +35,48 @@ namespace Ranger.Services.Operations.Data.Migrations
 
                     b.ToTable("data_protection_keys");
                 });
+
+            modelBuilder.Entity("Ranger.Services.Operations.Data.SagaLogData", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnName("id");
+
+                    b.Property<string>("Data")
+                        .HasColumnName("data");
+
+                    b.Property<string>("SagaId")
+                        .IsRequired()
+                        .HasColumnName("saga_id");
+
+                    b.Property<string>("SagaType")
+                        .IsRequired()
+                        .HasColumnName("saga_type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_saga_log_datas");
+
+                    b.ToTable("saga_log_datas");
+                });
+
+            modelBuilder.Entity("Ranger.Services.Operations.Data.SagaState", b =>
+                {
+                    b.Property<string>("SagaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnName("saga_id");
+
+                    b.Property<string>("Data")
+                        .HasColumnName("data");
+
+                    b.Property<string>("SagaType")
+                        .IsRequired()
+                        .HasColumnName("saga_type");
+
+                    b.HasKey("SagaId")
+                        .HasName("pk_saga_states");
+
+                    b.ToTable("saga_states");
+                });
 #pragma warning restore 612, 618
         }
     }

@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Chronicle;
+using Microsoft.Extensions.Logging;
 using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations
@@ -8,10 +9,12 @@ namespace Ranger.Services.Operations
         where TCommand : class, ICommand
     {
         private readonly ISagaCoordinator sagaCoordinator;
+        private readonly ILogger<GenericCommandHandler<TCommand>> logger;
 
-        public GenericCommandHandler(ISagaCoordinator sagaCoordinator)
+        public GenericCommandHandler(ISagaCoordinator sagaCoordinator, ILogger<GenericCommandHandler<TCommand>> logger)
         {
             this.sagaCoordinator = sagaCoordinator;
+            this.logger = logger;
         }
         public async Task HandleAsync(TCommand command, ICorrelationContext context)
         {
@@ -21,7 +24,14 @@ namespace Ranger.Services.Operations
             }
 
             var sagaContext = SagaContext.FromCorrelationContext(context);
-            await sagaCoordinator.ProcessAsync(command, context: sagaContext);
+            try
+            {
+                await sagaCoordinator.ProcessAsync(command, context: sagaContext);
+            }
+            catch (ChronicleException ex)
+            {
+                logger.LogError(sagaContext.SagaContextError.Exception, "An exception was thrown resulting in a saga rejection. Ack'ing message.");
+            }
         }
     }
 }
