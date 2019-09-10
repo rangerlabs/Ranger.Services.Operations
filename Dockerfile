@@ -25,6 +25,7 @@ RUN dotnet publish -c ${BUILD_CONFIG} -o /app/published
 FROM microsoft/dotnet:aspnetcore-runtime
 WORKDIR /app
 COPY --from=build-env /app/published .
+COPY --from=build-env /app/vsdbg ./vsdbg
 
 ARG BUILD_CONFIG="Release"
 ARG ASPNETCORE_ENVIRONMENT="Production"

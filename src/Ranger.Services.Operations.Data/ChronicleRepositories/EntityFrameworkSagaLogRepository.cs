@@ -41,18 +41,17 @@ namespace Ranger.Services.Operations.Data
             {
                 throw new ArgumentException(nameof(sagaType));
             }
-            List<EntityFrameworkSagaLogData> sagaLogDatas = new List<EntityFrameworkSagaLogData>();
-            IEnumerable<EntityFrameworkSagaLogData> serializedSagaLogDatas = new List<EntityFrameworkSagaLogData>();
-            var sagaLogDataString = await context.SagaLogDatas.FirstOrDefaultAsync(sld => sld.SagaId == id && sld.SagaType == sagaType.ToString());
-            if (sagaLogDataString != null && !String.IsNullOrWhiteSpace(sagaLogDataString.Data))
+            IList<EntityFrameworkSagaLogData> serializedSagaLogDatas = new List<EntityFrameworkSagaLogData>();
+            var sagaLogDataStrings = await context.SagaLogDatas.Where(sld => sld.SagaId == id && sld.SagaType == sagaType.ToString()).ToListAsync();
+            sagaLogDataStrings.ForEach(sld =>
             {
-                sagaLogDatas = JsonConvert.DeserializeObject<List<EntityFrameworkSagaLogData>>(sagaLogDataString.Data);
-                serializedSagaLogDatas = sagaLogDatas.Select(s =>
+                if (!String.IsNullOrWhiteSpace(sld.Data))
                 {
-                    var message = (s.Message as JObject).ToObject(s.MessageType);
-                    return new EntityFrameworkSagaLogData(s.SagaId, s.SagaType, s.CreatedAt, message, message.GetType());
-                });
-            }
+                    var efSagaLogData = JsonConvert.DeserializeObject<EntityFrameworkSagaLogData>(sld.Data);
+                    var message = (efSagaLogData.Message as JObject).ToObject(efSagaLogData.MessageType);
+                    serializedSagaLogDatas.Add(new EntityFrameworkSagaLogData(efSagaLogData.SagaId, efSagaLogData.SagaType, efSagaLogData.CreatedAt, message, message.GetType()));
+                }
+            });
             return serializedSagaLogDatas;
         }
 
