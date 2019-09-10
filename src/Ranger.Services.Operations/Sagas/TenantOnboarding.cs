@@ -56,7 +56,6 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(Messages.Identity.TenantInitialized message, ISagaContext context)
         {
-            await RejectAsync();
             await Task.Run(() =>
                this.busPublisher.Send(
                    new CreateNewTenantOwner(
