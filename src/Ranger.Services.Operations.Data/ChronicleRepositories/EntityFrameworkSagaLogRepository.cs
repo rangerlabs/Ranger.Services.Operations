@@ -47,6 +47,7 @@ namespace Ranger.Services.Operations.Data
             {
                 if (!String.IsNullOrWhiteSpace(sld.Data))
                 {
+
                     var sagaLogData = JsonConvert.DeserializeObject<EntityFrameworkSagaLogData>(sld.Data);
                     var message = (sagaLogData.Message as JObject).ToObject(sagaLogData.MessageType);
                     deserializedSagaLogDatas.Add(new EntityFrameworkSagaLogData(sagaLogData.SagaId, sagaLogData.SagaType, sagaLogData.CreatedAt, message, message.GetType()));
