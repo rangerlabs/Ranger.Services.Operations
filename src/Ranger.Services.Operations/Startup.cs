@@ -73,7 +73,6 @@ namespace Ranger.Services.Operations
                 .ProtectKeysWithCertificate(new X509Certificate2(configuration["DataProtectionCertPath:Path"]))
                 .PersistKeysToDbContext<OperationsDbContext>();
 
-
             services.AddChronicle(b =>
             {
                 b.UseSagaLog<EntityFrameworkSagaLogRepository>();
