@@ -41,18 +41,18 @@ namespace Ranger.Services.Operations.Data
             {
                 throw new ArgumentException(nameof(sagaType));
             }
-            IList<EntityFrameworkSagaLogData> serializedSagaLogDatas = new List<EntityFrameworkSagaLogData>();
+            IList<EntityFrameworkSagaLogData> deserializedSagaLogDatas = new List<EntityFrameworkSagaLogData>();
             var sagaLogDataStrings = await context.SagaLogDatas.Where(sld => sld.SagaId == id && sld.SagaType == sagaType.ToString()).ToListAsync();
             sagaLogDataStrings.ForEach(sld =>
             {
                 if (!String.IsNullOrWhiteSpace(sld.Data))
                 {
-                    var efSagaLogData = JsonConvert.DeserializeObject<EntityFrameworkSagaLogData>(sld.Data);
-                    var message = (efSagaLogData.Message as JObject).ToObject(efSagaLogData.MessageType);
-                    serializedSagaLogDatas.Add(new EntityFrameworkSagaLogData(efSagaLogData.SagaId, efSagaLogData.SagaType, efSagaLogData.CreatedAt, message, message.GetType()));
+                    var sagaLogData = JsonConvert.DeserializeObject<EntityFrameworkSagaLogData>(sld.Data);
+                    var message = (sagaLogData.Message as JObject).ToObject(sagaLogData.MessageType);
+                    deserializedSagaLogDatas.Add(new EntityFrameworkSagaLogData(sagaLogData.SagaId, sagaLogData.SagaType, sagaLogData.CreatedAt, message, message.GetType()));
                 }
             });
-            return serializedSagaLogDatas;
+            return deserializedSagaLogDatas;
         }
 
         public async Task WriteAsync(ISagaLogData sagaLogData)

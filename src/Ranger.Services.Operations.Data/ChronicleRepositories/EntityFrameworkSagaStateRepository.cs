@@ -48,7 +48,7 @@ namespace Ranger.Services.Operations.Data
 
             var entityFrameworkSagaState = new EntityFrameworkSagaState(state.SagaId, state.SagaType, state.State, state?.Data, state?.Data.GetType());
 
-            var sagaStateString = JsonConvert.SerializeObject(entityFrameworkSagaState);
+            var serializedSagaState = JsonConvert.SerializeObject(entityFrameworkSagaState);
             var cachedSagaState = await context.SagaStates.FirstOrDefaultAsync(ss => ss.SagaId == state.SagaId && ss.SagaType == state.SagaType.ToString());
             if (cachedSagaState is null)
             {
@@ -56,13 +56,13 @@ namespace Ranger.Services.Operations.Data
                 {
                     SagaId = state.SagaId,
                     SagaType = state.SagaType.ToString(),
-                    Data = sagaStateString
+                    Data = serializedSagaState
                 };
                 context.SagaStates.Add(sagaState);
             }
             else
             {
-                cachedSagaState.Data = sagaStateString;
+                cachedSagaState.Data = serializedSagaState;
                 context.SagaStates.Update(cachedSagaState);
             }
             await context.SaveChangesAsync();
