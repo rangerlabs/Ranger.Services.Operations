@@ -17,6 +17,8 @@ namespace Ranger.Services.Operations.Data
         }
 
         public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
+        public DbSet<SagaLogData> SagaLogDatas { get; set; }
+        public DbSet<SagaState> SagaStates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
