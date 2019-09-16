@@ -28,7 +28,7 @@ namespace Ranger.Services.Operations
             {
                 await sagaCoordinator.ProcessAsync(command, context: sagaContext);
             }
-            catch (ChronicleException ex)
+            catch (ChronicleException)
             {
                 logger.LogError(sagaContext.SagaContextError.Exception, "An exception was thrown resulting in a saga rejection. Ack'ing message.");
             }
