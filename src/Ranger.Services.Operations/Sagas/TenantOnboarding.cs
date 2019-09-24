@@ -36,6 +36,7 @@ namespace Ranger.Services.Operations
             {
                 Data.Owner = message.Owner;
                 Data.Domain = message.DomainName;
+                Data.RegistrationKey = message.RegistrationKey;
                 Data.DatabaseUsername = message.DatabaseUsername;
                 this.busPublisher.Send(new Messages.Identity.InitializeTenant(message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 this.busPublisher.Send(new Messages.Geofences.InitializeTenant(message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
@@ -173,7 +174,7 @@ namespace Ranger.Services.Operations
 
         private void SendNewTenantOwnerEmail(ISagaContext context)
         {
-            busPublisher.Send(new SendNewTenantOwnerEmail(Data.Owner.Email, Data.Owner.FirstName, Data.Domain, ""),
+            busPublisher.Send(new SendNewTenantOwnerEmail(Data.Owner.Email, Data.Owner.FirstName, Data.Domain, Data.RegistrationKey),
                 CorrelationContext.FromId(Guid.Parse(context.SagaId))
             );
         }
@@ -183,6 +184,7 @@ namespace Ranger.Services.Operations
     {
         public NewTenantOwner Owner { get; set; }
         public string Domain { get; set; }
+        public string RegistrationKey { get; set; }
         public string DatabaseUsername { get; set; }
         public List<string> ServicesInitialized { get; set; } = new List<string>();
     }

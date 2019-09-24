@@ -17,17 +17,17 @@ namespace Ranger.Services.Operations.Messages.Notifications
                 throw new System.ArgumentException(nameof(email));
             }
 
-            if (firstName is null)
+            if (string.IsNullOrWhiteSpace(firstName))
             {
                 throw new System.ArgumentNullException(nameof(firstName));
             }
 
-            if (domain is null)
+            if (string.IsNullOrWhiteSpace(domain))
             {
                 throw new System.ArgumentNullException(nameof(domain));
             }
 
-            if (registrationCode is null)
+            if (string.IsNullOrWhiteSpace(registrationCode))
             {
                 throw new System.ArgumentNullException(nameof(registrationCode));
             }
