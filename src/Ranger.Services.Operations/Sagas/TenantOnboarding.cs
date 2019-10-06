@@ -15,12 +15,16 @@ namespace Ranger.Services.Operations
         ISagaStartAction<TenantCreated>,
         ISagaAction<Messages.Identity.TenantInitialized>,
         ISagaAction<Messages.Geofences.TenantInitialized>,
+        ISagaAction<Messages.Projects.TenantInitialized>,
+        ISagaAction<Messages.Integrations.TenantInitialized>,
         ISagaAction<Messages.Identity.InitializeTenantRejected>,
         ISagaAction<Messages.Geofences.InitializeTenantRejected>,
+        ISagaAction<Messages.Projects.InitializeTenantRejected>,
+        ISagaAction<Messages.Integrations.InitializeTenantRejected>,
         ISagaAction<NewTenantOwnerCreated>,
         ISagaAction<SendNewTenantOwnerEmailSent>
     {
-        const int SERVICES_TO_BE_INITIALIZED = 2;
+        const int SERVICES_TO_BE_INITIALIZED = 4;
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<TenantOnboarding> logger;
 
@@ -39,6 +43,8 @@ namespace Ranger.Services.Operations
                 Data.RegistrationKey = message.RegistrationKey;
                 Data.DatabaseUsername = message.DatabaseUsername;
                 this.busPublisher.Send(new Messages.Identity.InitializeTenant(message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Projects.InitializeTenant(message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Integrations.InitializeTenant(message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 this.busPublisher.Send(new Messages.Geofences.InitializeTenant(message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
@@ -134,6 +140,28 @@ namespace Ranger.Services.Operations
             await Task.CompletedTask;
         }
 
+        public async Task HandleAsync(Messages.Projects.InitializeTenantRejected message, ISagaContext context)
+        {
+            await RejectAsync();
+        }
+
+        public async Task CompensateAsync(Messages.Projects.InitializeTenantRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            await Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
+        {
+            await RejectAsync();
+        }
+
+        public async Task CompensateAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            await Task.CompletedTask;
+        }
+
         public async Task HandleAsync(Messages.Geofences.TenantInitialized message, ISagaContext context)
         {
             await Task.Run(() =>
@@ -146,6 +174,40 @@ namespace Ranger.Services.Operations
         }
 
         public async Task CompensateAsync(Messages.Geofences.TenantInitialized message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            await Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
+        {
+            await Task.Run(() =>
+            {
+                if (AllServicesInitialized("projects"))
+                {
+                    SendNewTenantOwnerEmail(context);
+                }
+            });
+        }
+
+        public async Task CompensateAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            await Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
+        {
+            await Task.Run(() =>
+            {
+                if (AllServicesInitialized("integrations"))
+                {
+                    SendNewTenantOwnerEmail(context);
+                }
+            });
+        }
+
+        public async Task CompensateAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             await Task.CompletedTask;
