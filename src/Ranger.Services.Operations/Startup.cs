@@ -77,7 +77,6 @@ namespace Ranger.Services.Operations
             {
                 b.UseSagaLog<EntityFrameworkSagaLogRepository>();
                 b.UseSagaStateRepository<EntityFrameworkSagaStateRepository>();
-                b.DeleteOnCompleted();
             });
 
             var builder = new ContainerBuilder();
