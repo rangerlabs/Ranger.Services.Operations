@@ -15,12 +15,15 @@ namespace Ranger.Services.Operations
         ISagaStartAction<TenantCreated>,
         ISagaAction<Messages.Identity.TenantInitialized>,
         ISagaAction<Messages.Geofences.TenantInitialized>,
+        ISagaAction<Messages.Projects.TenantInitialized>,
+        ISagaAction<Messages.Integrations.TenantInitialized>,
         ISagaAction<Messages.Identity.InitializeTenantRejected>,
         ISagaAction<Messages.Geofences.InitializeTenantRejected>,
+        ISagaAction<Messages.Projects.InitializeTenantRejected>,
+        ISagaAction<Messages.Integrations.InitializeTenantRejected>,
         ISagaAction<NewTenantOwnerCreated>,
         ISagaAction<SendNewTenantOwnerEmailSent>
     {
-        const int SERVICES_TO_BE_INITIALIZED = 2;
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<TenantOnboarding> logger;
 
@@ -38,15 +41,23 @@ namespace Ranger.Services.Operations
                 Data.Domain = message.DomainName;
                 Data.RegistrationKey = message.RegistrationKey;
                 Data.DatabaseUsername = message.DatabaseUsername;
+                Data.DatabasePassword = message.DatabasePassword;
                 this.busPublisher.Send(new Messages.Identity.InitializeTenant(message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                this.busPublisher.Send(new Messages.Geofences.InitializeTenant(message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
         public async Task CompensateAsync(TenantCreated message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await DropTenant(context);
+            logger.LogDebug("Dropping tenant.");
+            await Task.Run(() =>
+            {
+                this.busPublisher.Send(new Messages.Identity.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Projects.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Integrations.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Geofences.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            });
+            await Task.CompletedTask;
             await Task.Run(() =>
                 this.busPublisher.Send(
                     new DeleteTenant(Data.Domain),
@@ -58,17 +69,7 @@ namespace Ranger.Services.Operations
         public async Task HandleAsync(Messages.Identity.TenantInitialized message, ISagaContext context)
         {
             await Task.Run(() =>
-               this.busPublisher.Send(
-                   new CreateNewTenantOwner(
-                       Data.Owner.Email,
-                       Data.Owner.FirstName,
-                       Data.Owner.LastName,
-                       Data.Owner.Password,
-                       Data.Domain,
-                       ""
-                   ),
-                   CorrelationContext.FromId(Guid.Parse(context.SagaId))
-               )
+               this.busPublisher.Send(new Messages.Projects.InitializeTenant(Data.DatabaseUsername, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)))
             );
         }
 
@@ -93,10 +94,7 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                if (AllServicesInitialized("identity"))
-                {
-                    SendNewTenantOwnerEmail(context);
-                }
+                busPublisher.Send(new SendNewTenantOwnerEmail(Data.Owner.Email, Data.Owner.FirstName, Data.Domain, Data.RegistrationKey), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
@@ -134,14 +132,43 @@ namespace Ranger.Services.Operations
             await Task.CompletedTask;
         }
 
+        public async Task HandleAsync(Messages.Projects.InitializeTenantRejected message, ISagaContext context)
+        {
+            await RejectAsync();
+        }
+
+        public async Task CompensateAsync(Messages.Projects.InitializeTenantRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            await Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
+        {
+            await RejectAsync();
+        }
+
+        public async Task CompensateAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            await Task.CompletedTask;
+        }
+
         public async Task HandleAsync(Messages.Geofences.TenantInitialized message, ISagaContext context)
         {
             await Task.Run(() =>
             {
-                if (AllServicesInitialized("geofences"))
-                {
-                    SendNewTenantOwnerEmail(context);
-                }
+                this.busPublisher.Send(
+                   new CreateNewTenantOwner(
+                       Data.Owner.Email,
+                       Data.Owner.FirstName,
+                       Data.Owner.LastName,
+                       Data.Owner.Password,
+                       Data.Domain,
+                       ""
+                   ),
+                   CorrelationContext.FromId(Guid.Parse(context.SagaId))
+               );
             });
         }
 
@@ -151,32 +178,32 @@ namespace Ranger.Services.Operations
             await Task.CompletedTask;
         }
 
-        private bool AllServicesInitialized(string service)
+        public async Task HandleAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
         {
-            if (Data.ServicesInitialized.Count == SERVICES_TO_BE_INITIALIZED - 1)
-            {
-                return true;
-            }
-            Data.ServicesInitialized.Add(service);
-            return false;
-        }
-
-        private async Task DropTenant(ISagaContext context)
-        {
-            logger.LogDebug("Dropping tenant.");
             await Task.Run(() =>
             {
-                this.busPublisher.Send(new Messages.Identity.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                this.busPublisher.Send(new Messages.Geofences.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Integrations.InitializeTenant(Data.DatabaseUsername, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
+        }
+
+        public async Task CompensateAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             await Task.CompletedTask;
         }
 
-        private void SendNewTenantOwnerEmail(ISagaContext context)
+        public async Task HandleAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
         {
-            busPublisher.Send(new SendNewTenantOwnerEmail(Data.Owner.Email, Data.Owner.FirstName, Data.Domain, Data.RegistrationKey),
-                CorrelationContext.FromId(Guid.Parse(context.SagaId))
-            );
+            await Task.Run(() =>
+            {
+                this.busPublisher.Send(new Messages.Geofences.InitializeTenant(Data.DatabaseUsername, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            });
+        }
+
+        public async Task CompensateAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            await Task.CompletedTask;
         }
     }
 
@@ -186,6 +213,7 @@ namespace Ranger.Services.Operations
         public string Domain { get; set; }
         public string RegistrationKey { get; set; }
         public string DatabaseUsername { get; set; }
+        public string DatabasePassword { get; set; }
         public List<string> ServicesInitialized { get; set; } = new List<string>();
     }
 }
