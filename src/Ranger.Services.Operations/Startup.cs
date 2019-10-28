@@ -40,6 +40,8 @@ namespace Ranger.Services.Operations
             {
                 var policy = ScopePolicy.Create("operationsScope");
                 options.Filters.Add(new AuthorizeFilter(policy));
+                options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(
+                    (_) => "The field is required.");
             })
                 .AddAuthorization()
                 .AddJsonFormatters()
