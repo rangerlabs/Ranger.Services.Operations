@@ -165,7 +165,7 @@ namespace Ranger.Services.Operations
                        Data.Owner.LastName,
                        Data.Owner.Password,
                        Data.Domain,
-                       ""
+                       Data.Owner.Email
                    ),
                    CorrelationContext.FromId(Guid.Parse(context.SagaId))
                );
