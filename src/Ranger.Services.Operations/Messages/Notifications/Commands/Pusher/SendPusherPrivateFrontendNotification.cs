@@ -11,9 +11,9 @@ namespace Ranger.Services.Operations
         public string UserEmail { get; }
         public OperationsStateEnum State { get; }
 
-        public SendPusherPrivateFrontendNotification(string backendEventName, string domain, string userEmail, OperationsStateEnum state)
+        public SendPusherPrivateFrontendNotification(string backendEventKey, string domain, string userEmail, OperationsStateEnum state)
         {
-            this.BackendEventKey = backendEventName;
+            this.BackendEventKey = backendEventKey;
             this.Domain = domain;
             this.UserEmail = userEmail;
             this.State = state;

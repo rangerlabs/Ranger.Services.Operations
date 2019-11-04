@@ -14,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
+using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 
@@ -36,6 +37,10 @@ namespace Ranger.Services.Operations
 
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<IProjectsClient, ProjectsClient>(provider =>
+            {
+                return new ProjectsClient("http://projects:8086", loggerFactory.CreateLogger<ProjectsClient>());
+            });
             services.AddMvcCore(options =>
             {
                 var policy = ScopePolicy.Create("operationsScope");
