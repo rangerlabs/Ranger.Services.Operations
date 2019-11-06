@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
 using Ranger.RabbitMQ;
+using System;
 
 namespace Ranger.Services.Operations
 {
@@ -27,6 +28,10 @@ namespace Ranger.Services.Operations
             try
             {
                 await sagaCoordinator.ProcessAsync(command, context: sagaContext);
+            }
+            catch (NotImplementedException ex)
+            {
+                logger.LogError(ex, "A Chronicle method was not implemented.");
             }
             catch (ChronicleException)
             {

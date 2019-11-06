@@ -11,10 +11,9 @@ namespace Ranger.Services.Operations
         public string FirstName { get; }
         public string Role { get; }
         public string RegistrationKey { get; }
-        public string CommandingUserEmail { get; }
-        public IEnumerable<string> PermittedProjects { get; }
+        public IEnumerable<string> AuthorizedProjects { get; }
 
-        public NewApplicationUserCreated(string domain, string email, string firstName, string role, string registrationKey, string commandingUserEmail, IEnumerable<string> permittedProjects = null)
+        public NewApplicationUserCreated(string domain, string email, string firstName, string role, string registrationKey, IEnumerable<string> authorizedProjects = null)
         {
 
             if (string.IsNullOrWhiteSpace(domain))
@@ -42,19 +41,12 @@ namespace Ranger.Services.Operations
                 throw new System.ArgumentException($"{nameof(registrationKey)} was null or whitespace.");
             }
 
-            if (string.IsNullOrWhiteSpace(commandingUserEmail))
-            {
-                throw new System.ArgumentException($"{nameof(commandingUserEmail)} was null or whitespace.");
-            }
-
-
             this.Domain = domain;
             this.Email = email;
             this.FirstName = firstName;
             this.Role = role;
             this.RegistrationKey = registrationKey;
-            this.CommandingUserEmail = commandingUserEmail;
-            this.PermittedProjects = permittedProjects;
+            this.AuthorizedProjects = authorizedProjects;
         }
     }
 }

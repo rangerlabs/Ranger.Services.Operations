@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,10 @@ namespace Ranger.Services.Operations
                 try
                 {
                     await sagaCoordinator.ProcessAsync(@event, context: sagaContext);
+                }
+                catch (NotImplementedException ex)
+                {
+                    logger.LogError(ex, "A Chronicle method was not implemented.");
                 }
                 catch (ChronicleException)
                 {
