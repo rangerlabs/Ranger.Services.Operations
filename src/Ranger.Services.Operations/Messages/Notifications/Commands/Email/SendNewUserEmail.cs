@@ -6,6 +6,7 @@ namespace Ranger.Services.Operations.Messages.Notifications
     [MessageNamespace("notifications")]
     public class SendNewUserEmail : ICommand
     {
+        public string UserId { get; }
         public string Email { get; }
         public string FirstName { get; }
         public string Domain { get; }
@@ -13,8 +14,13 @@ namespace Ranger.Services.Operations.Messages.Notifications
         public string RegistrationCode { get; }
         public IEnumerable<string> AuthorizedProjects { get; }
 
-        public SendNewUserEmail(string email, string firstName, string domain, string role, string registrationCode, IEnumerable<string> authorizedProjects = null)
+        public SendNewUserEmail(string userId, string email, string firstName, string domain, string role, string registrationCode, IEnumerable<string> authorizedProjects = null)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                throw new System.ArgumentException(nameof(userId));
+            }
+
             if (string.IsNullOrWhiteSpace(email))
             {
                 throw new System.ArgumentException(nameof(email));
@@ -40,6 +46,7 @@ namespace Ranger.Services.Operations.Messages.Notifications
                 throw new System.ArgumentNullException(nameof(registrationCode));
             }
 
+            this.UserId = userId;
             this.Email = email;
             this.FirstName = firstName;
             this.Domain = domain;

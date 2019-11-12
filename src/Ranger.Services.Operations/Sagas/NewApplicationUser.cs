@@ -71,6 +71,7 @@ namespace Ranger.Services.Operations.Sagas
             await Task.Run(() =>
             {
                 var sendNewUserEmail = new SendNewUserEmail(
+                    message.UserId,
                     message.Email,
                     message.FirstName,
                     message.Domain,
@@ -85,7 +86,7 @@ namespace Ranger.Services.Operations.Sagas
         public async Task HandleAsync(SendNewUserEmailSent message, ISagaContext context)
         {
 
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} created.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} succesfully created.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
