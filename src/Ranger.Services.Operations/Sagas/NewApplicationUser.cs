@@ -76,7 +76,7 @@ namespace Ranger.Services.Operations.Sagas
                     message.FirstName,
                     message.Domain,
                     message.Role,
-                    message.RegistrationKey,
+                    message.Token,
                     permittedProjectNames
                 );
                 this.busPublisher.Send(sendNewUserEmail, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
