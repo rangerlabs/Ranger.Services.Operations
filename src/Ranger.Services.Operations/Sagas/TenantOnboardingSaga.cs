@@ -11,7 +11,7 @@ using Ranger.Services.Operations.Messages.Tenants;
 
 namespace Ranger.Services.Operations
 {
-    public class TenantOnboarding : Saga<UserData>,
+    public class TenantOnboardingSaga : Saga<UserData>,
         ISagaStartAction<TenantCreated>,
         ISagaAction<Messages.Identity.TenantInitialized>,
         ISagaAction<Messages.Geofences.TenantInitialized>,
@@ -25,9 +25,9 @@ namespace Ranger.Services.Operations
         ISagaAction<SendNewTenantOwnerEmailSent>
     {
         private readonly IBusPublisher busPublisher;
-        private readonly ILogger<TenantOnboarding> logger;
+        private readonly ILogger<TenantOnboardingSaga> logger;
 
-        public TenantOnboarding(IBusPublisher busPublisher, ILogger<TenantOnboarding> logger)
+        public TenantOnboardingSaga(IBusPublisher busPublisher, ILogger<TenantOnboardingSaga> logger)
         {
             this.busPublisher = busPublisher;
             this.logger = logger;
