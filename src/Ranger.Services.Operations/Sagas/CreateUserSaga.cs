@@ -9,7 +9,7 @@ using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Messages.Notifications;
 
-namespace Ranger.Services.Operations.Sagas
+namespace Ranger.Services.Operations
 {
     public class CreateUserSaga : Saga<CreateUserData>,
         ISagaStartAction<CreateUserSagaInitializer>,
@@ -21,10 +21,12 @@ namespace Ranger.Services.Operations.Sagas
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<CreateUserSaga> logger;
         private readonly IProjectsClient projectsClient;
+        private readonly ITenantsClient tenantsClient;
 
-        public CreateUserSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ILogger<CreateUserSaga> logger)
+        public CreateUserSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<CreateUserSaga> logger)
         {
             this.projectsClient = projectsClient;
+            this.tenantsClient = tenantsClient;
             this.logger = logger;
             this.busPublisher = busPublisher;
         }
@@ -57,17 +59,10 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(UserCreated message, ISagaContext context)
         {
-            var projects = await projectsClient.GetAllProjectsAsync<IEnumerable<ProjectModel>>(message.Domain);
-            IEnumerable<string> authorizedProjectNames = null;
-            if (message.Role.ToLowerInvariant() != Enum.GetName(typeof(RolesEnum), RolesEnum.User).ToLowerInvariant())
-            {
-                authorizedProjectNames = projects.Where(_ => message.AuthorizedProjects.Contains(_.ProjectId)).Select(_ => _.Name);
-            }
-            else
-            {
-                authorizedProjectNames = projects.Select(_ => _.Name);
-            }
+            var role = Enum.Parse<RolesEnum>(message.Role);
+            IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(message.Domain, role, message.AuthorizedProjects, projectsClient).ConfigureAwait(false);
 
+            var organizationNameModel = await tenantsClient.GetTenantAsync<TenantOrganizationNameModel>(message.Domain).ConfigureAwait(false);
             await Task.Run(() =>
             {
                 var sendNewUserEmail = new SendNewUserEmail(
@@ -75,6 +70,7 @@ namespace Ranger.Services.Operations.Sagas
                     message.Email,
                     message.FirstName,
                     message.Domain,
+                    organizationNameModel.OrganizationName,
                     message.Role,
                     message.Token,
                     authorizedProjectNames
@@ -82,6 +78,7 @@ namespace Ranger.Services.Operations.Sagas
                 this.busPublisher.Send(sendNewUserEmail, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
+
 
         public async Task HandleAsync(SendNewUserEmailSent message, ISagaContext context)
         {

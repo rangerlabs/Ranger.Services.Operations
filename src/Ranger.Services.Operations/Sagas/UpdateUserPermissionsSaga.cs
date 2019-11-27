@@ -21,10 +21,12 @@ namespace Ranger.Services.Operations.Sagas
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<UpdateUserPermissions> logger;
         private readonly IProjectsClient projectsClient;
+        private readonly ITenantsClient tenantsClient;
 
-        public UpdateUserPermissionsSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ILogger<UpdateUserPermissions> logger)
+        public UpdateUserPermissionsSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<UpdateUserPermissions> logger)
         {
             this.projectsClient = projectsClient;
+            this.tenantsClient = tenantsClient;
             this.logger = logger;
             this.busPublisher = busPublisher;
         }
@@ -57,35 +59,36 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(UserPermissionsUpdated message, ISagaContext context)
         {
-            var projects = await projectsClient.GetAllProjectsAsync<IEnumerable<ProjectModel>>(message.Domain);
-            IEnumerable<string> permittedProjectNames = null;
-            if (message.Role.ToLowerInvariant() != Enum.GetName(typeof(RolesEnum), RolesEnum.User).ToLowerInvariant())
+            try
             {
-                permittedProjectNames = projects.Where(_ => message.AuthorizedProjects.Contains(_.ProjectId)).Select(_ => _.Name);
-            }
-            else
-            {
-                permittedProjectNames = projects.Select(_ => _.Name);
-            }
+                var role = Enum.Parse<RolesEnum>(message.Role);
+                IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(message.Domain, role, message.AuthorizedProjects, projectsClient).ConfigureAwait(false);
 
-            await Task.Run(() =>
+                var organizationNameModel = await tenantsClient.GetTenantAsync<TenantOrganizationNameModel>(message.Domain).ConfigureAwait(false);
+                await Task.Run(() =>
+                    {
+                        var sendNewUserEmail = new SendUserPermissionsUpdatedEmail(
+                            message.UserId,
+                            message.Email,
+                            message.FirstName,
+                            message.Domain,
+                            organizationNameModel.OrganizationName,
+                            message.Role,
+                            authorizedProjectNames
+                        );
+                        this.busPublisher.Send(sendNewUserEmail, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    });
+            }
+            catch (Exception ex)
             {
-                var sendNewUserEmail = new SendUserPermissionsUpdatedEmail(
-                    message.UserId,
-                    message.Email,
-                    message.FirstName,
-                    message.Domain,
-                    message.Role,
-                    permittedProjectNames
-                );
-                this.busPublisher.Send(sendNewUserEmail, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
+                logger.LogError(ex, "Failed to gather necessay requirements to send updated permissions email. Permissions were updated successfully, silently failing and completing saga.");
+                await CompleteAsync();
+            }
         }
 
         public async Task HandleAsync(SendUserPermissionsUpdatedEmailSent message, ISagaContext context)
         {
-
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} succesfully updated.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Permissions successfully updated for {Data.UserEmail}.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
