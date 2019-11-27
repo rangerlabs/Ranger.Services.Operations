@@ -41,6 +41,10 @@ namespace Ranger.Services.Operations
             {
                 return new ProjectsClient("http://projects:8086", loggerFactory.CreateLogger<ProjectsClient>());
             });
+            services.AddSingleton<ITenantsClient, TenantsClient>(provider =>
+            {
+                return new TenantsClient("http://tenants:8082", loggerFactory.CreateLogger<TenantsClient>());
+            });
             services.AddMvcCore(options =>
             {
                 var policy = ScopePolicy.Create("operationsScope");
