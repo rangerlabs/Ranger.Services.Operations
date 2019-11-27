@@ -17,7 +17,7 @@ namespace Ranger.Services.Operations.Sagas
         ISagaAction<UpdateUserPermissionsRejected>,
         ISagaAction<SendUserPermissionsUpdatedEmailSent>
     {
-        const string EVENT_NAME = "user-created";
+        const string EVENT_NAME = "user-updated";
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<UpdateUserPermissions> logger;
         private readonly IProjectsClient projectsClient;
@@ -44,7 +44,7 @@ namespace Ranger.Services.Operations.Sagas
             await Task.Run(() =>
             {
                 logger.LogInformation("Calling compensate for CreateNewApplicationUserSagaInitializer.");
-                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error updating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
@@ -85,7 +85,7 @@ namespace Ranger.Services.Operations.Sagas
         public async Task HandleAsync(SendUserPermissionsUpdatedEmailSent message, ISagaContext context)
         {
 
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} succesfully created.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} succesfully updated.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
@@ -97,14 +97,14 @@ namespace Ranger.Services.Operations.Sagas
                 Data.UserEmail = message.Email;
                 Data.CommandingUserEmail = message.CommandingUserEmail;
 
-                var createNewApplicationUser = new UpdateUserPermissions(
+                var updateUserPermissions = new UpdateUserPermissions(
                     message.Domain,
                     message.Email,
                     message.CommandingUserEmail,
                     message.Role,
                     message.AuthorizedProjects
                     );
-                busPublisher.Send(createNewApplicationUser, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(updateUserPermissions, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
