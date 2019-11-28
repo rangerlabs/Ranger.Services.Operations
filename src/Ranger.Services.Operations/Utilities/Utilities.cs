@@ -14,11 +14,11 @@ namespace Ranger.Services.Operations
             IEnumerable<string> authorizedProjectNames = null;
             if (role != RolesEnum.User)
             {
-                authorizedProjectNames = projects.Where(_ => authorizedProjects.Contains(_.ProjectId)).Select(_ => _.Name);
+                authorizedProjectNames = projects.Select(_ => _.Name);
             }
             else
             {
-                authorizedProjectNames = projects.Select(_ => _.Name);
+                authorizedProjectNames = projects.Where(_ => authorizedProjects.Contains(_.ProjectId)).Select(_ => _.Name);
             }
 
             return authorizedProjectNames;
