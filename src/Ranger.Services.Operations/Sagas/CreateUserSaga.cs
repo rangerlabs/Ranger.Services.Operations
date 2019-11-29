@@ -33,7 +33,7 @@ namespace Ranger.Services.Operations
 
         public async Task CompensateAsync(UserCreated message, ISagaContext context)
         {
-            await Task.Run(() => logger.LogError("Calling compensate for NewApplicationUserCreated."));
+            await Task.Run(() => logger.LogError("Calling compensate for NewUserCreated."));
         }
 
         public async Task CompensateAsync(SendNewUserEmailSent message, ISagaContext context)
@@ -45,7 +45,7 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                logger.LogInformation("Calling compensate for CreateNewApplicationUserSagaInitializer.");
+                logger.LogInformation("Calling compensate for CreateNewUserSagaInitializer.");
                 busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
@@ -53,7 +53,7 @@ namespace Ranger.Services.Operations
         public async Task CompensateAsync(CreateUserRejected message, ISagaContext context)
         {
             await Task.Run(() =>
-                logger.LogInformation("Calling compensate for CreateApplicationUserRejected.")
+                logger.LogInformation("Calling compensate for CreateUserRejected.")
             );
         }
 
@@ -95,7 +95,7 @@ namespace Ranger.Services.Operations
                 Data.UserEmail = message.Email;
                 Data.CommandingUserEmail = message.CommandingUserEmail;
 
-                var createNewApplicationUser = new CreateUser(
+                var createNewUser = new CreateUser(
                     message.Domain,
                     message.Email,
                     message.FirstName,
@@ -104,7 +104,7 @@ namespace Ranger.Services.Operations
                     message.CommandingUserEmail,
                     message.PermittedProjectIds
                 );
-                busPublisher.Send(createNewApplicationUser, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(createNewUser, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
