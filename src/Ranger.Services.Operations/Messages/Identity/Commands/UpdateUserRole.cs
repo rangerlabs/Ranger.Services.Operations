@@ -4,15 +4,14 @@ using Ranger.RabbitMQ;
 namespace Ranger.Services.Operations
 {
     [MessageNamespace("identity")]
-    public class UpdateUserPermissions : ICommand
+    public class UpdateUserRole : ICommand
     {
         public string Domain { get; }
         public string Email { get; }
         public string CommandingUserEmail { get; }
         public string Role { get; }
-        public IEnumerable<string> AuthorizedProjects { get; }
 
-        public UpdateUserPermissions(string domain, string email, string commandingUserEmail, string role = "", IEnumerable<string> authorizedProjects = null)
+        public UpdateUserRole(string domain, string email, string commandingUserEmail, string role = "")
         {
             if (string.IsNullOrWhiteSpace(domain))
             {
@@ -33,7 +32,6 @@ namespace Ranger.Services.Operations
             this.CommandingUserEmail = commandingUserEmail;
             this.Domain = domain;
             this.Role = role;
-            this.AuthorizedProjects = authorizedProjects;
         }
     }
 }

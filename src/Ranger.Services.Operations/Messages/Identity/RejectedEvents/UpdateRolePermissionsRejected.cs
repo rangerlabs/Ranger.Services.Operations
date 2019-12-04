@@ -3,9 +3,9 @@ using Ranger.RabbitMQ;
 namespace Ranger.Services.Operations
 {
     [MessageNamespaceAttribute("identity")]
-    public class UpdateUserPermissionsRejected : IRejectedEvent
+    public class UpdateUserRoleRejected : IRejectedEvent
     {
-        public UpdateUserPermissionsRejected(string reason, string code)
+        public UpdateUserRoleRejected(string reason, string code)
         {
             this.Reason = reason;
             this.Code = code;
