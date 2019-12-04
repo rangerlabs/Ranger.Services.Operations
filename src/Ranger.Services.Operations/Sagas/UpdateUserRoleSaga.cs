@@ -153,7 +153,7 @@ namespace Ranger.Services.Operations.Sagas
 
                 await Task.Run(() =>
                 {
-                    var sendNewUserEmail = new SendUserRoleUpdatedEmail(
+                    var sendNewUserEmail = new SendUserPermissionsUpdatedEmail(
                         Data.UserId,
                         Data.UserEmail,
                         Data.FirstName,

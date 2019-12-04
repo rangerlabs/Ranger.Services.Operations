@@ -4,7 +4,7 @@ using Ranger.RabbitMQ;
 namespace Ranger.Services.Operations.Messages.Notifications
 {
     [MessageNamespace("notifications")]
-    public class SendUserRoleUpdatedEmail : ICommand
+    public class SendUserPermissionsUpdatedEmail : ICommand
     {
         public string UserId { get; }
         public string Email { get; }
@@ -14,7 +14,7 @@ namespace Ranger.Services.Operations.Messages.Notifications
         public string Role { get; }
         public IEnumerable<string> AuthorizedProjects { get; }
 
-        public SendUserRoleUpdatedEmail(string userId, string email, string firstName, string domain, string organization, string role, IEnumerable<string> authorizedProjects = null)
+        public SendUserPermissionsUpdatedEmail(string userId, string email, string firstName, string domain, string organization, string role, IEnumerable<string> authorizedProjects = null)
         {
             if (string.IsNullOrWhiteSpace(userId))
             {
