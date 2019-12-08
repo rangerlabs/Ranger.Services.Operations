@@ -12,7 +12,7 @@ using Ranger.Services.Operations.Messages.Projects;
 
 namespace Ranger.Services.Operations.Sagas
 {
-    public class UpdateUserRoleSaga : Saga<UpdateUserData>,
+    public class UpdateUserPermissionsSaga : Saga<UpdateUserData>,
         ISagaStartAction<UpdateUserPermissionsSagaInitializer>,
         ISagaAction<UserRoleUpdated>,
         ISagaAction<UpdateUserRoleRejected>,
@@ -21,14 +21,13 @@ namespace Ranger.Services.Operations.Sagas
     {
         const string EVENT_NAME = "user-updated";
         private readonly IBusPublisher busPublisher;
-        private readonly ILogger<UpdateUserRole> logger;
+        private readonly ILogger<UpdateUserPermissionsSaga> logger;
         private readonly IProjectsClient projectsClient;
         private readonly ITenantsClient tenantsClient;
         private readonly IIdentityClient identityClient;
 
-        public UpdateUserRoleSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, IIdentityClient identityClient, ILogger<UpdateUserRole> logger)
+        public UpdateUserPermissionsSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<UpdateUserPermissionsSaga> logger)
         {
-            this.identityClient = identityClient;
             this.projectsClient = projectsClient;
             this.tenantsClient = tenantsClient;
             this.logger = logger;
@@ -72,9 +71,10 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(UserRoleUpdated message, ISagaContext context)
         {
+            Data.UserId = message.UserId;
+            Data.FirstName = message.FirstName;
             if (Data.NewRole != RolesEnum.User)
             {
-                Data.UserId = message.UserId;
                 busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Permissions successfully updated for {Data.UserEmail}.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 await SendPermissionsUpdatedEmail(context);
                 await CompleteAsync();
