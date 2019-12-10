@@ -8,9 +8,9 @@ namespace Ranger.Services.Operations.Messages.Notifications
         public string Email { get; }
         public string FirstName { get; }
         public string Domain { get; }
-        public string RegistrationCode { get; }
+        public string Token { get; }
 
-        public SendNewTenantOwnerEmail(string email, string firstName, string domain, string registrationCode)
+        public SendNewTenantOwnerEmail(string email, string firstName, string domain, string token)
         {
             if (string.IsNullOrWhiteSpace(email))
             {
@@ -27,15 +27,15 @@ namespace Ranger.Services.Operations.Messages.Notifications
                 throw new System.ArgumentNullException(nameof(domain));
             }
 
-            if (string.IsNullOrWhiteSpace(registrationCode))
+            if (string.IsNullOrWhiteSpace(token))
             {
-                throw new System.ArgumentNullException(nameof(registrationCode));
+                throw new System.ArgumentNullException(nameof(token));
             }
 
             this.Email = email;
             this.FirstName = firstName;
             this.Domain = domain;
-            this.RegistrationCode = registrationCode;
+            this.Token = token;
         }
     }
 }

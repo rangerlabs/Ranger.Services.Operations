@@ -4,17 +4,17 @@ using Ranger.RabbitMQ;
 namespace Ranger.Services.Operations
 {
     [MessageNamespace("identity")]
-    public class NewApplicationUserCreated : IEvent
+    public class UserCreated : IEvent
     {
         public string Domain { get; }
         public string UserId { get; }
         public string Email { get; }
         public string FirstName { get; }
         public string Role { get; }
-        public string RegistrationKey { get; }
+        public string Token { get; }
         public IEnumerable<string> AuthorizedProjects { get; }
 
-        public NewApplicationUserCreated(string domain, string userId, string email, string firstName, string role, string registrationKey, IEnumerable<string> authorizedProjects = null)
+        public UserCreated(string domain, string userId, string email, string firstName, string role, string token, IEnumerable<string> authorizedProjects = null)
         {
 
             if (string.IsNullOrWhiteSpace(domain))
@@ -42,9 +42,9 @@ namespace Ranger.Services.Operations
                 throw new System.ArgumentException($"{nameof(role)} was null or whitespace.");
             }
 
-            if (string.IsNullOrWhiteSpace(registrationKey))
+            if (string.IsNullOrWhiteSpace(token))
             {
-                throw new System.ArgumentException($"{nameof(registrationKey)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(token)} was null or whitespace.");
             }
 
             this.Domain = domain;
@@ -52,7 +52,7 @@ namespace Ranger.Services.Operations
             this.Email = email;
             this.FirstName = firstName;
             this.Role = role;
-            this.RegistrationKey = registrationKey;
+            this.Token = token;
             this.AuthorizedProjects = authorizedProjects;
         }
     }

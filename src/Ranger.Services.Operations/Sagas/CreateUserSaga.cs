@@ -9,29 +9,31 @@ using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Messages.Notifications;
 
-namespace Ranger.Services.Operations.Sagas
+namespace Ranger.Services.Operations
 {
-    public class NewApplicationUser : Saga<UserData>,
-        ISagaStartAction<CreateNewApplicationUserSagaInitializer>,
-        ISagaAction<NewApplicationUserCreated>,
-        ISagaAction<CreateApplicationUserRejected>,
+    public class CreateUserSaga : Saga<CreateUserData>,
+        ISagaStartAction<CreateUserSagaInitializer>,
+        ISagaAction<UserCreated>,
+        ISagaAction<CreateUserRejected>,
         ISagaAction<SendNewUserEmailSent>
     {
         const string EVENT_NAME = "user-created";
         private readonly IBusPublisher busPublisher;
-        private readonly ILogger<NewApplicationUser> logger;
+        private readonly ILogger<CreateUserSaga> logger;
         private readonly IProjectsClient projectsClient;
+        private readonly ITenantsClient tenantsClient;
 
-        public NewApplicationUser(IBusPublisher busPublisher, IProjectsClient projectsClient, ILogger<NewApplicationUser> logger)
+        public CreateUserSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<CreateUserSaga> logger)
         {
             this.projectsClient = projectsClient;
+            this.tenantsClient = tenantsClient;
             this.logger = logger;
             this.busPublisher = busPublisher;
         }
 
-        public async Task CompensateAsync(NewApplicationUserCreated message, ISagaContext context)
+        public async Task CompensateAsync(UserCreated message, ISagaContext context)
         {
-            await Task.Run(() => logger.LogError("Calling compensate for NewApplicationUserCreated."));
+            await Task.Run(() => logger.LogError("Calling compensate for NewUserCreated."));
         }
 
         public async Task CompensateAsync(SendNewUserEmailSent message, ISagaContext context)
@@ -39,35 +41,28 @@ namespace Ranger.Services.Operations.Sagas
             await Task.Run(() => logger.LogError("Calling compensate for SendNewUserEmailSent."));
         }
 
-        public async Task CompensateAsync(CreateNewApplicationUserSagaInitializer message, ISagaContext context)
+        public async Task CompensateAsync(CreateUserSagaInitializer message, ISagaContext context)
         {
             await Task.Run(() =>
             {
-                logger.LogInformation("Calling compensate for CreateNewApplicationUserSagaInitializer.");
+                logger.LogInformation("Calling compensate for CreateNewUserSagaInitializer.");
                 busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
-        public async Task CompensateAsync(CreateApplicationUserRejected message, ISagaContext context)
+        public async Task CompensateAsync(CreateUserRejected message, ISagaContext context)
         {
             await Task.Run(() =>
-                logger.LogInformation("Calling compensate for CreateApplicationUserRejected.")
+                logger.LogInformation("Calling compensate for CreateUserRejected.")
             );
         }
 
-        public async Task HandleAsync(NewApplicationUserCreated message, ISagaContext context)
+        public async Task HandleAsync(UserCreated message, ISagaContext context)
         {
-            var projects = await projectsClient.GetAllProjectsAsync<IEnumerable<ProjectModel>>(message.Domain);
-            IEnumerable<string> permittedProjectNames = null;
-            if (message.Role.ToLowerInvariant() != Enum.GetName(typeof(RolesEnum), RolesEnum.User).ToLowerInvariant())
-            {
-                permittedProjectNames = projects.Where(_ => message.AuthorizedProjects.Contains(_.ProjectId)).Select(_ => _.Name);
-            }
-            else
-            {
-                permittedProjectNames = projects.Select(_ => _.Name);
-            }
+            var role = Enum.Parse<RolesEnum>(message.Role);
+            IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(message.Domain, role, message.AuthorizedProjects, projectsClient).ConfigureAwait(false);
 
+            var organizationNameModel = await tenantsClient.GetTenantAsync<TenantOrganizationNameModel>(message.Domain).ConfigureAwait(false);
             await Task.Run(() =>
             {
                 var sendNewUserEmail = new SendNewUserEmail(
@@ -75,13 +70,15 @@ namespace Ranger.Services.Operations.Sagas
                     message.Email,
                     message.FirstName,
                     message.Domain,
+                    organizationNameModel.OrganizationName,
                     message.Role,
-                    message.RegistrationKey,
-                    permittedProjectNames
+                    message.Token,
+                    authorizedProjectNames
                 );
                 this.busPublisher.Send(sendNewUserEmail, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
+
 
         public async Task HandleAsync(SendNewUserEmailSent message, ISagaContext context)
         {
@@ -90,7 +87,7 @@ namespace Ranger.Services.Operations.Sagas
             await CompleteAsync();
         }
 
-        public async Task HandleAsync(CreateNewApplicationUserSagaInitializer message, ISagaContext context)
+        public async Task HandleAsync(CreateUserSagaInitializer message, ISagaContext context)
         {
             await Task.Run(() =>
             {
@@ -98,7 +95,7 @@ namespace Ranger.Services.Operations.Sagas
                 Data.UserEmail = message.Email;
                 Data.CommandingUserEmail = message.CommandingUserEmail;
 
-                var createNewApplicationUser = new CreateApplicationUser(
+                var createNewUser = new CreateUser(
                     message.Domain,
                     message.Email,
                     message.FirstName,
@@ -107,18 +104,18 @@ namespace Ranger.Services.Operations.Sagas
                     message.CommandingUserEmail,
                     message.PermittedProjectIds
                 );
-                busPublisher.Send(createNewApplicationUser, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(createNewUser, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
-        public async Task HandleAsync(CreateApplicationUserRejected message, ISagaContext context)
+        public async Task HandleAsync(CreateUserRejected message, ISagaContext context)
         {
             Data.RejectReason = message.Reason;
             await RejectAsync();
         }
     }
 
-    public class UserData
+    public class CreateUserData
     {
         public string RejectReason { get; set; }
         public string CommandingUserEmail { get; set; }

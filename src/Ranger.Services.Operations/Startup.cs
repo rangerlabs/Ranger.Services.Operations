@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
 using Ranger.InternalHttpClient;
@@ -22,39 +23,47 @@ namespace Ranger.Services.Operations
 {
     public class Startup
     {
+        private readonly IWebHostEnvironment Environment;
         private readonly IConfiguration configuration;
-        private readonly ILoggerFactory loggerFactory;
-        private readonly ILogger<Startup> logger;
-        private IContainer container;
+        private ILoggerFactory loggerFactory;
         private IBusSubscriber busSubscriber;
 
-        public Startup(IConfiguration configuration, ILoggerFactory loggerFactory, ILogger<Startup> logger)
+        public Startup(IWebHostEnvironment environment, IConfiguration configuration)
         {
+            this.Environment = environment;
             this.configuration = configuration;
-            this.loggerFactory = loggerFactory;
-            this.logger = logger;
         }
 
-        public IServiceProvider ConfigureServices(IServiceCollection services)
+        public void ConfigureServices(IServiceCollection services)
         {
+
+            services.AddControllers(options =>
+                 {
+                     options.EnableEndpointRouting = false;
+                 })
+                 .AddNewtonsoftJson(options =>
+                 {
+                     options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                 });
+
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("operationsApi", policyBuilder =>
+                {
+                    policyBuilder.RequireScope("operationsApi");
+                });
+            });
+
+
             services.AddSingleton<IProjectsClient, ProjectsClient>(provider =>
             {
                 return new ProjectsClient("http://projects:8086", loggerFactory.CreateLogger<ProjectsClient>());
             });
-            services.AddMvcCore(options =>
+            services.AddSingleton<ITenantsClient, TenantsClient>(provider =>
             {
-                var policy = ScopePolicy.Create("operationsScope");
-                options.Filters.Add(new AuthorizeFilter(policy));
-                options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(
-                    (_) => "The field is required.");
-            })
-                .AddAuthorization()
-                .AddJsonFormatters()
-                .AddJsonOptions(options =>
-                {
-                    options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-                });
+                return new TenantsClient("http://tenants:8082", loggerFactory.CreateLogger<TenantsClient>());
+            });
 
             services.AddEntityFrameworkNpgsql().AddDbContext<OperationsDbContext>(options =>
             {
@@ -86,22 +95,30 @@ namespace Ranger.Services.Operations
                 b.UseSagaStateRepository<EntityFrameworkSagaStateRepository>();
             });
 
-            var builder = new ContainerBuilder();
-            builder.Populate(services);
+        }
+
+        public void ConfigureContainer(ContainerBuilder builder)
+        {
             builder.AddRabbitMq(loggerFactory);
             builder.RegisterGeneric(typeof(GenericEventHandler<>))
                 .As(typeof(IMessageHandler<>));
             builder.RegisterGeneric(typeof(GenericCommandHandler<>))
                 .As(typeof(IMessageHandler<>));
-            container = builder.Build();
-            return new AutofacServiceProvider(container);
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApplicationLifetime applicationLifetime)
+        public void Configure(IApplicationBuilder app, IHostApplicationLifetime applicationLifetime, ILoggerFactory loggerFactory)
         {
+            this.loggerFactory = loggerFactory;
+
             applicationLifetime.ApplicationStopping.Register(OnShutdown);
+
+            app.UseRouting();
             app.UseAuthentication();
-            app.UseMvcWithDefaultRoute();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+
             this.busSubscriber = app.UseRabbitMQ()
                 .SubscribeAllMessages();
         }

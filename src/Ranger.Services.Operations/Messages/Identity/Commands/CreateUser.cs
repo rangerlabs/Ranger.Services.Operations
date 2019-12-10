@@ -4,7 +4,7 @@ using Ranger.RabbitMQ;
 namespace Ranger.Services.Operations
 {
     [MessageNamespaceAttribute("identity")]
-    public class CreateApplicationUser : ICommand
+    public class CreateUser : ICommand
     {
         public string Domain { get; set; }
         public string Email { get; }
@@ -14,7 +14,7 @@ namespace Ranger.Services.Operations
         public string CommandingUserEmail { get; }
         public IEnumerable<string> PermittedProjectIds { get; }
 
-        public CreateApplicationUser(string domain, string email, string firstName, string lastName, string role, string commandingUserEmail, IEnumerable<string> permittedProjectIds)
+        public CreateUser(string domain, string email, string firstName, string lastName, string role, string commandingUserEmail, IEnumerable<string> permittedProjectIds)
         {
             if (string.IsNullOrEmpty(domain))
             {

@@ -11,7 +11,7 @@ using Ranger.Services.Operations.Messages.Tenants;
 
 namespace Ranger.Services.Operations
 {
-    public class TenantOnboarding : Saga<UserData>,
+    public class TenantOnboardingSaga : Saga<UserData>,
         ISagaStartAction<TenantCreated>,
         ISagaAction<Messages.Identity.TenantInitialized>,
         ISagaAction<Messages.Geofences.TenantInitialized>,
@@ -25,9 +25,9 @@ namespace Ranger.Services.Operations
         ISagaAction<SendNewTenantOwnerEmailSent>
     {
         private readonly IBusPublisher busPublisher;
-        private readonly ILogger<TenantOnboarding> logger;
+        private readonly ILogger<TenantOnboardingSaga> logger;
 
-        public TenantOnboarding(IBusPublisher busPublisher, ILogger<TenantOnboarding> logger)
+        public TenantOnboardingSaga(IBusPublisher busPublisher, ILogger<TenantOnboardingSaga> logger)
         {
             this.busPublisher = busPublisher;
             this.logger = logger;
@@ -39,7 +39,7 @@ namespace Ranger.Services.Operations
             {
                 Data.Owner = message.Owner;
                 Data.Domain = message.DomainName;
-                Data.RegistrationKey = message.RegistrationKey;
+                Data.Token = message.Token;
                 Data.DatabaseUsername = message.DatabaseUsername;
                 Data.DatabasePassword = message.DatabasePassword;
                 this.busPublisher.Send(new Messages.Identity.InitializeTenant(message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
@@ -94,7 +94,7 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                busPublisher.Send(new SendNewTenantOwnerEmail(Data.Owner.Email, Data.Owner.FirstName, Data.Domain, Data.RegistrationKey), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendNewTenantOwnerEmail(Data.Owner.Email, Data.Owner.FirstName, Data.Domain, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
@@ -210,7 +210,7 @@ namespace Ranger.Services.Operations
     {
         public NewTenantOwner Owner { get; set; }
         public string Domain { get; set; }
-        public string RegistrationKey { get; set; }
+        public string Token { get; set; }
         public string DatabaseUsername { get; set; }
         public string DatabasePassword { get; set; }
         public List<string> ServicesInitialized { get; set; } = new List<string>();
