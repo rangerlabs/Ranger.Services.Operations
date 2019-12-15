@@ -147,7 +147,7 @@ namespace Ranger.Services.Operations.Sagas
         {
             try
             {
-                IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(Data.Domain, Data.NewRole, Data.NewAuthorizedProjects, projectsClient).ConfigureAwait(false);
+                IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(Data.Domain, Data.UserEmail, Data.NewRole, Data.NewAuthorizedProjects, projectsClient).ConfigureAwait(false);
 
                 var organizationNameModel = await tenantsClient.GetTenantAsync<TenantOrganizationNameModel>(Data.Domain).ConfigureAwait(false);
 

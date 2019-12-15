@@ -60,7 +60,7 @@ namespace Ranger.Services.Operations
         public async Task HandleAsync(UserCreated message, ISagaContext context)
         {
             var role = Enum.Parse<RolesEnum>(message.Role);
-            IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(message.Domain, role, message.AuthorizedProjects, projectsClient).ConfigureAwait(false);
+            IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(message.Domain, Data.UserEmail, role, message.AuthorizedProjects, projectsClient).ConfigureAwait(false);
 
             var organizationNameModel = await tenantsClient.GetTenantAsync<TenantOrganizationNameModel>(message.Domain).ConfigureAwait(false);
             await Task.Run(() =>
