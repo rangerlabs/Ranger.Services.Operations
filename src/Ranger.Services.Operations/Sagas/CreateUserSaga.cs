@@ -8,6 +8,7 @@ using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Messages.Notifications;
+using Ranger.Services.Operations.Messages.Projects;
 
 namespace Ranger.Services.Operations
 {
@@ -15,7 +16,10 @@ namespace Ranger.Services.Operations
         ISagaStartAction<CreateUserSagaInitializer>,
         ISagaAction<UserCreated>,
         ISagaAction<CreateUserRejected>,
-        ISagaAction<SendNewUserEmailSent>
+        ISagaAction<SendNewUserEmailSent>,
+        ISagaAction<UserProjectsUpdated>,
+        ISagaAction<UpdateUserProjectsRejected>
+
     {
         const string EVENT_NAME = "user-created";
         private readonly IBusPublisher busPublisher;
@@ -33,7 +37,7 @@ namespace Ranger.Services.Operations
 
         public async Task CompensateAsync(UserCreated message, ISagaContext context)
         {
-            await Task.Run(() => logger.LogError("Calling compensate for NewUserCreated."));
+            await Task.Run(() => logger.LogError("Calling compensate for UserCreated."));
         }
 
         public async Task CompensateAsync(SendNewUserEmailSent message, ISagaContext context)
@@ -57,33 +61,73 @@ namespace Ranger.Services.Operations
             );
         }
 
-        public async Task HandleAsync(UserCreated message, ISagaContext context)
+        public async Task CompensateAsync(UpdateUserProjectsRejected message, ISagaContext context)
         {
-            var role = Enum.Parse<RolesEnum>(message.Role);
-            IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(message.Domain, Data.UserEmail, role, message.AuthorizedProjects, projectsClient).ConfigureAwait(false);
-
-            var organizationNameModel = await tenantsClient.GetTenantAsync<TenantOrganizationNameModel>(message.Domain).ConfigureAwait(false);
             await Task.Run(() =>
-            {
-                var sendNewUserEmail = new SendNewUserEmail(
-                    message.UserId,
-                    message.Email,
-                    message.FirstName,
-                    message.Domain,
-                    organizationNameModel.OrganizationName,
-                    message.Role,
-                    message.Token,
-                    authorizedProjectNames
-                );
-                this.busPublisher.Send(sendNewUserEmail, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
+               logger.LogInformation("Calling compensate for UpdateUserProjectsRejected.")
+            );
         }
 
+        public async Task CompensateAsync(UserProjectsUpdated message, ISagaContext context)
+        {
+            await Task.Run(() =>
+               logger.LogInformation("Calling compensate for UserProjectsUpdated.")
+            );
+        }
+
+        public async Task HandleAsync(UpdateUserProjectsRejected message, ISagaContext context)
+        {
+            var notificationText = $"Successfully created {Data.UserEmail} but failed to set their authorized projects. Verify the selected projects and try again.";
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            await CompleteAsync();
+        }
+
+        public async Task HandleAsync(UserProjectsUpdated message, ISagaContext context)
+        {
+            var notificationText = "";
+            if (message.UnSuccessfullyAddedProjectIds.Count() > 0)
+            {
+                notificationText = $"Successfully created {Data.UserEmail} but some projects failed be added. Verify the selected projects and try again.";
+            }
+            else
+            {
+                notificationText = $"User {Data.UserEmail} was successfully created.";
+            }
+
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            await SendNewUserEmail(context);
+            await CompleteAsync();
+        }
+
+        public async Task HandleAsync(UserCreated message, ISagaContext context)
+        {
+            Data.UserId = message.UserId;
+            Data.FirstName = message.FirstName;
+            Data.Token = message.Token;
+            if (Data.NewRole != RolesEnum.User)
+            {
+                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} was successfully created.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                await SendNewUserEmail(context);
+                await CompleteAsync();
+            }
+            else
+            {
+                if (Data.NewAuthorizedProjects.Count() > 0)
+                {
+                    busPublisher.Send(new UpdateUserProjects(Data.Domain, Data.NewAuthorizedProjects, message.UserId, message.Email, Data.CommandingUserEmail), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                }
+                else
+                {
+                    busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} was successfully created.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    await SendNewUserEmail(context);
+                    await CompleteAsync();
+                }
+            }
+        }
 
         public async Task HandleAsync(SendNewUserEmailSent message, ISagaContext context)
         {
-
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} succesfully created.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} was succesfully created.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
@@ -94,6 +138,8 @@ namespace Ranger.Services.Operations
                 Data.Domain = message.Domain;
                 Data.UserEmail = message.Email;
                 Data.CommandingUserEmail = message.CommandingUserEmail;
+                Data.NewAuthorizedProjects = message.AuthorizedProjects;
+                Data.NewRole = Enum.Parse<RolesEnum>(message.Role);
 
                 var createNewUser = new CreateUser(
                     message.Domain,
@@ -102,7 +148,7 @@ namespace Ranger.Services.Operations
                     message.LastName,
                     message.Role,
                     message.CommandingUserEmail,
-                    message.PermittedProjectIds
+                    message.AuthorizedProjects
                 );
                 busPublisher.Send(createNewUser, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
@@ -113,13 +159,39 @@ namespace Ranger.Services.Operations
             Data.RejectReason = message.Reason;
             await RejectAsync();
         }
+
+        private async Task SendNewUserEmail(ISagaContext context)
+        {
+            IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(Data.Domain, Data.UserEmail, Data.NewRole, Data.NewAuthorizedProjects, projectsClient).ConfigureAwait(false);
+
+            var organizationNameModel = await tenantsClient.GetTenantAsync<TenantOrganizationNameModel>(Data.Domain).ConfigureAwait(false);
+            await Task.Run(() =>
+            {
+                var sendNewUserEmail = new SendNewUserEmail(
+                    Data.UserId,
+                    Data.UserEmail,
+                    Data.FirstName,
+                    Data.Domain,
+                    organizationNameModel.OrganizationName,
+                    Enum.GetName(typeof(RolesEnum), Data.NewRole),
+                    Data.Token,
+                    authorizedProjectNames
+                );
+                this.busPublisher.Send(sendNewUserEmail, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            });
+        }
     }
 
     public class CreateUserData
     {
         public string RejectReason { get; set; }
         public string CommandingUserEmail { get; set; }
+        public string FirstName { get; set; }
+        public string UserId { get; set; }
         public string UserEmail { get; set; }
         public string Domain { get; set; }
+        public string Token { get; set; }
+        public RolesEnum NewRole { get; set; }
+        public IEnumerable<string> NewAuthorizedProjects { get; set; }
     }
 }
