@@ -12,9 +12,9 @@ namespace Ranger.Services.Operations
         public string LastName { get; }
         public string Role { get; }
         public string CommandingUserEmail { get; }
-        public IEnumerable<string> PermittedProjectIds { get; }
+        public IEnumerable<string> AuthorizedProjects { get; }
 
-        public CreateUserSagaInitializer(string domain, string email, string firstName, string lastName, string role, string commandingUserEmail, IEnumerable<string> permittedProjectIds)
+        public CreateUserSagaInitializer(string domain, string email, string firstName, string lastName, string role, string commandingUserEmail, IEnumerable<string> authorizedProjects)
         {
             if (string.IsNullOrEmpty(domain))
             {
@@ -52,7 +52,7 @@ namespace Ranger.Services.Operations
             this.LastName = lastName;
             this.Role = role;
             this.CommandingUserEmail = commandingUserEmail;
-            this.PermittedProjectIds = permittedProjectIds ?? new List<string>();
+            this.AuthorizedProjects = authorizedProjects ?? new List<string>();
         }
     }
 }
