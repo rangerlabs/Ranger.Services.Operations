@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
+using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Notifications;
 using Ranger.Services.Operations.Messages.Projects;
 
@@ -77,6 +78,7 @@ namespace Ranger.Services.Operations.Sagas
             {
                 busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Permissions successfully updated for {Data.UserEmail}.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 await SendPermissionsUpdatedEmail(context);
+                await SendPermissionsUpdatedPusherNotification(context);
                 await CompleteAsync();
             }
             else
@@ -133,6 +135,7 @@ namespace Ranger.Services.Operations.Sagas
 
             busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await SendPermissionsUpdatedEmail(context);
+            await SendPermissionsUpdatedPusherNotification(context);
             await CompleteAsync();
         }
 
@@ -140,7 +143,13 @@ namespace Ranger.Services.Operations.Sagas
         {
             var notificationText = "The user was added to their new role but failed to set their authorized projects. Verify the selected projects and try again.";
             busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            await SendPermissionsUpdatedPusherNotification(context);
             await CompleteAsync();
+        }
+
+        private async Task SendPermissionsUpdatedPusherNotification(ISagaContext context)
+        {
+            await Task.Run(() => busPublisher.Send(new SendPusherDomainUserPredefinedNotification("PermissionsUpdated", Data.Domain, Data.UserEmail, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId))));
         }
 
         private async Task SendPermissionsUpdatedEmail(ISagaContext context)
