@@ -94,7 +94,6 @@ namespace Ranger.Services.Operations
                 notificationText = $"User {Data.UserEmail} was successfully created.";
             }
 
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await SendNewUserEmail(context);
             await CompleteAsync();
         }
@@ -106,7 +105,6 @@ namespace Ranger.Services.Operations
             Data.Token = message.Token;
             if (Data.NewRole != RolesEnum.User)
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} was successfully created.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 await SendNewUserEmail(context);
                 await CompleteAsync();
             }
@@ -118,7 +116,6 @@ namespace Ranger.Services.Operations
                 }
                 else
                 {
-                    busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} was successfully created.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                     await SendNewUserEmail(context);
                     await CompleteAsync();
                 }
