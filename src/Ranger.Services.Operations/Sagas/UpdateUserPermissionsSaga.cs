@@ -149,7 +149,7 @@ namespace Ranger.Services.Operations.Sagas
 
         private async Task SendPermissionsUpdatedPusherNotification(ISagaContext context)
         {
-            await Task.Run(() => busPublisher.Send(new SendPusherDomainUserPredefinedNotification("PermissionsUpdated", Data.Domain, Data.UserEmail, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId))));
+            await Task.Run(() => busPublisher.Send(new SendPusherDomainUserPredefinedNotification("PermissionsUpdated", Data.Domain, Data.UserEmail), CorrelationContext.FromId(Guid.Parse(context.SagaId))));
         }
 
         private async Task SendPermissionsUpdatedEmail(ISagaContext context)
