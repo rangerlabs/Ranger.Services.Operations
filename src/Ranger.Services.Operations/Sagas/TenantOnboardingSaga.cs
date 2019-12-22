@@ -21,8 +21,8 @@ namespace Ranger.Services.Operations
         ISagaAction<Messages.Geofences.InitializeTenantRejected>,
         ISagaAction<Messages.Projects.InitializeTenantRejected>,
         ISagaAction<Messages.Integrations.InitializeTenantRejected>,
-        ISagaAction<NewTenantOwnerCreated>,
-        ISagaAction<SendNewTenantOwnerEmailSent>
+        ISagaAction<NewPrimaryOwnerCreated>,
+        ISagaAction<SendNewPrimaryOwnerEmailSent>
     {
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<TenantOnboardingSaga> logger;
@@ -90,20 +90,20 @@ namespace Ranger.Services.Operations
             await Task.CompletedTask;
         }
 
-        public async Task HandleAsync(NewTenantOwnerCreated message, ISagaContext context)
+        public async Task HandleAsync(NewPrimaryOwnerCreated message, ISagaContext context)
         {
             await Task.Run(() =>
             {
-                busPublisher.Send(new SendNewTenantOwnerEmail(Data.Owner.Email, Data.Owner.FirstName, Data.Domain, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendNewPrimaryOwnerEmail(Data.Owner.Email, Data.Owner.FirstName, Data.Domain, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
-        public async Task CompensateAsync(NewTenantOwnerCreated message, ISagaContext context)
+        public async Task CompensateAsync(NewPrimaryOwnerCreated message, ISagaContext context)
         {
             await Task.CompletedTask;
         }
 
-        public async Task HandleAsync(SendNewTenantOwnerEmailSent message, ISagaContext context)
+        public async Task HandleAsync(SendNewPrimaryOwnerEmailSent message, ISagaContext context)
         {
             busPublisher.Send<SendPusherDomainFrontendNotification>(
                 new SendPusherDomainFrontendNotification(
@@ -116,7 +116,7 @@ namespace Ranger.Services.Operations
             await CompleteAsync();
         }
 
-        public async Task CompensateAsync(SendNewTenantOwnerEmailSent message, ISagaContext context)
+        public async Task CompensateAsync(SendNewPrimaryOwnerEmailSent message, ISagaContext context)
         {
             await Task.CompletedTask;
         }
@@ -159,7 +159,7 @@ namespace Ranger.Services.Operations
             await Task.Run(() =>
             {
                 this.busPublisher.Send(
-                   new CreateNewTenantOwner(
+                   new CreateNewPrimaryOwner(
                        Data.Owner.Email,
                        Data.Owner.FirstName,
                        Data.Owner.LastName,
@@ -208,7 +208,7 @@ namespace Ranger.Services.Operations
 
     public class UserData
     {
-        public NewTenantOwner Owner { get; set; }
+        public NewPrimaryOwner Owner { get; set; }
         public string Domain { get; set; }
         public string Token { get; set; }
         public string DatabaseUsername { get; set; }
