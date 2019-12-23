@@ -3,14 +3,14 @@ using Ranger.RabbitMQ;
 namespace Ranger.Services.Operations.Messages.Notifications
 {
     [MessageNamespace("notifications")]
-    public class SendNewTenantOwnerEmail : ICommand
+    public class SendNewPrimaryOwnerEmail : ICommand
     {
         public string Email { get; }
         public string FirstName { get; }
         public string Domain { get; }
         public string Token { get; }
 
-        public SendNewTenantOwnerEmail(string email, string firstName, string domain, string token)
+        public SendNewPrimaryOwnerEmail(string email, string firstName, string domain, string token)
         {
             if (string.IsNullOrWhiteSpace(email))
             {

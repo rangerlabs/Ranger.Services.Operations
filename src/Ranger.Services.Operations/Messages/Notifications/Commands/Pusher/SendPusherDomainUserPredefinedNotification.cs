@@ -11,7 +11,7 @@ namespace Ranger.Services.Operations
         public string UserEmail { get; }
         public OperationsStateEnum State { get; }
 
-        public SendPusherDomainUserPredefinedNotification(string backendEventKey, string domain, string userEmail, OperationsStateEnum state)
+        public SendPusherDomainUserPredefinedNotification(string backendEventKey, string domain, string userEmail, OperationsStateEnum state = OperationsStateEnum.Completed)
         {
             this.BackendEventKey = backendEventKey;
             this.Domain = domain;

@@ -5,7 +5,7 @@ namespace Ranger.Services.Operations.Messages.Tenants
     [MessageNamespace("tenants")]
     public class TenantCreated : IEvent
     {
-        public TenantCreated(string domainName, string databaseUsername, string databasePassword, string token, NewTenantOwner owner)
+        public TenantCreated(string domainName, string databaseUsername, string databasePassword, string token, NewPrimaryOwner owner)
         {
             this.DomainName = domainName;
             this.DatabaseUsername = databaseUsername;
@@ -18,6 +18,6 @@ namespace Ranger.Services.Operations.Messages.Tenants
         public string DatabaseUsername { get; }
         public string DatabasePassword { get; }
         public string Token { get; }
-        public NewTenantOwner Owner { get; }
+        public NewPrimaryOwner Owner { get; }
     }
 }
