@@ -40,7 +40,7 @@ namespace Ranger.Services.Operations.Messages.Geofences
 
             this.Coordinates = coordinates;
             this.Shape = shape;
-            this.Radius = Radius;
+            this.Radius = radius;
 
             this.Domain = domain;
             this.ExternalId = externalId;
