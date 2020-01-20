@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
-using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Notifications;
 using Ranger.Services.Operations.Messages.Projects;
 
@@ -25,7 +24,6 @@ namespace Ranger.Services.Operations.Sagas
         private readonly ILogger<UpdateUserPermissionsSaga> logger;
         private readonly IProjectsClient projectsClient;
         private readonly ITenantsClient tenantsClient;
-        private readonly IIdentityClient identityClient;
 
         public UpdateUserPermissionsSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<UpdateUserPermissionsSaga> logger)
         {
