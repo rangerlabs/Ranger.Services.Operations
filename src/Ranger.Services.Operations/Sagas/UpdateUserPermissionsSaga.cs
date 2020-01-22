@@ -43,7 +43,7 @@ namespace Ranger.Services.Operations.Sagas
             await Task.Run(() =>
             {
                 logger.LogInformation("Calling compensate for CreateNewApplicationUserSagaInitializer.");
-                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error updating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error updating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
@@ -74,14 +74,14 @@ namespace Ranger.Services.Operations.Sagas
             Data.FirstName = message.FirstName;
             if (Data.NewRole != RolesEnum.User)
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Permissions successfully updated for {Data.UserEmail}.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Permissions successfully updated for {Data.UserEmail}.", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 await SendPermissionsUpdatedEmail(context);
                 await SendPermissionsUpdatedPusherNotification(context);
                 await CompleteAsync();
             }
             else
             {
-                busPublisher.Send(new UpdateUserProjects(Data.Domain, Data.NewAuthorizedProjects, message.UserId, message.Email, Data.CommandingUserEmail), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new UpdateUserProjects(Data.Domain, Data.NewAuthorizedProjects, message.UserId, message.Email, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
         }
 
@@ -91,7 +91,7 @@ namespace Ranger.Services.Operations.Sagas
             {
                 Data.Domain = message.Domain;
                 Data.UserEmail = message.Email;
-                Data.CommandingUserEmail = message.CommandingUserEmail;
+                Data.Initiator = message.CommandingUserEmail;
                 Data.NewAuthorizedProjects = message.AuthorizedProjects;
                 Data.NewRole = Enum.Parse<RolesEnum>(message.Role);
 
@@ -131,7 +131,7 @@ namespace Ranger.Services.Operations.Sagas
                 notificationText = $"Permissions successfully updated for {Data.UserEmail}.";
             }
 
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await SendPermissionsUpdatedEmail(context);
             await SendPermissionsUpdatedPusherNotification(context);
             await CompleteAsync();
@@ -140,7 +140,7 @@ namespace Ranger.Services.Operations.Sagas
         public async Task HandleAsync(UpdateUserProjectsRejected message, ISagaContext context)
         {
             var notificationText = "The user was added to their new role but failed to set their authorized projects. Verify the selected projects and try again.";
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await SendPermissionsUpdatedPusherNotification(context);
             await CompleteAsync();
         }
@@ -179,14 +179,12 @@ namespace Ranger.Services.Operations.Sagas
         }
     }
 
-    public class UpdateUserData
+    public class UpdateUserData : BaseSagaData
     {
         public string RejectReason { get; set; }
-        public string CommandingUserEmail { get; set; }
         public string FirstName { get; set; }
         public string UserId { get; set; }
         public string UserEmail { get; set; }
-        public string Domain { get; set; }
         public RolesEnum NewRole { get; set; }
         public IEnumerable<string> NewAuthorizedProjects { get; set; }
     }

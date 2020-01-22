@@ -50,7 +50,7 @@ namespace Ranger.Services.Operations.Data
 
                     var sagaLogData = JsonConvert.DeserializeObject<EntityFrameworkSagaLogData>(sld.Data);
                     var message = (sagaLogData.Message as JObject).ToObject(sagaLogData.MessageType);
-                    deserializedSagaLogDatas.Add(new EntityFrameworkSagaLogData(sagaLogData.SagaId, sagaLogData.SagaType, sagaLogData.CreatedAt, message, message.GetType()));
+                    deserializedSagaLogDatas.Add(new EntityFrameworkSagaLogData(sagaLogData.Id, sagaLogData.Type, sagaLogData.DatabaseUsername, sagaLogData.CreatedAt, message, message.GetType()));
                 }
             });
             return deserializedSagaLogDatas;
@@ -58,28 +58,31 @@ namespace Ranger.Services.Operations.Data
 
         public async Task WriteAsync(ISagaLogData sagaLogData)
         {
-            if (sagaLogData is null)
+            if (sagaLogData is EntityFrameworkSagaLogData efSagaLogData)
+            {
+                var entityFrameworkSagaLogData = new EntityFrameworkSagaLogData(
+                    efSagaLogData.Id,
+                    efSagaLogData.Type,
+                    efSagaLogData.DatabaseUsername,
+                    efSagaLogData.CreatedAt,
+                    efSagaLogData.Message,
+                    efSagaLogData.Message.GetType()
+                    );
+
+                var logData = new SagaLogData
+                {
+                    SagaId = sagaLogData.Id,
+                    SagaType = sagaLogData.Type.ToString(),
+                    Data = JsonConvert.SerializeObject(entityFrameworkSagaLogData)
+                };
+
+                context.SagaLogDatas.Add(logData);
+                await context.SaveChangesAsync();
+            }
+            else
             {
                 throw new ArgumentException(nameof(sagaLogData));
             }
-
-            var entityFrameworkSagaLogData = new EntityFrameworkSagaLogData(
-                sagaLogData.SagaId,
-                sagaLogData.SagaType,
-                sagaLogData.CreatedAt,
-                sagaLogData.Message,
-                sagaLogData.Message.GetType()
-                );
-
-            var logData = new SagaLogData
-            {
-                SagaId = sagaLogData.SagaId,
-                SagaType = sagaLogData.SagaType.ToString(),
-                Data = JsonConvert.SerializeObject(entityFrameworkSagaLogData)
-            };
-
-            context.SagaLogDatas.Add(logData);
-            await context.SaveChangesAsync();
         }
     }
 }

@@ -48,7 +48,7 @@ namespace Ranger.Services.Operations.Sagas
 
                 Data.FrontendRequest = message.FrontendRequest;
                 Data.Domain = message.Domain;
-                Data.CommandingUser = message.CommandingUserEmailOrTokenPrefix;
+                Data.Initiator = message.CommandingUserEmailOrTokenPrefix;
                 Data.ExternalId = message.ExternalId;
 
                 var createGeofence = new CreateGeofence(
@@ -79,7 +79,7 @@ namespace Ranger.Services.Operations.Sagas
             logger.LogInformation("Calling handle for GeofenceCreated.");
             if (Data.FrontendRequest)
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"Geofence {Data.ExternalId} was successfully created.", Data.Domain, Data.CommandingUser, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"Geofence {Data.ExternalId} was successfully created.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 await CompleteAsync();
             }
             else
@@ -95,11 +95,11 @@ namespace Ranger.Services.Operations.Sagas
             {
                 if (!string.IsNullOrWhiteSpace(message.Reason))
                 {
-                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"An error occurred creating the geofence {Data.ExternalId}. {message.Reason}", Data.Domain, Data.CommandingUser, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"An error occurred creating the geofence {Data.ExternalId}. {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 else
                 {
-                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"An error occurred creating the geofence {Data.ExternalId}.", Data.Domain, Data.CommandingUser, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"An error occurred creating the geofence {Data.ExternalId}.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 await RejectAsync();
             }
@@ -110,11 +110,9 @@ namespace Ranger.Services.Operations.Sagas
         }
     }
 
-    public class CreateGeofenceData
+    public class CreateGeofenceData : BaseSagaData
     {
         public bool FrontendRequest;
-        public string Domain;
-        public string CommandingUser;
         public string ExternalId;
     }
 }

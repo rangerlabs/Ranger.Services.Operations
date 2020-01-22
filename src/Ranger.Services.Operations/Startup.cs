@@ -73,6 +73,7 @@ namespace Ranger.Services.Operations
             );
 
             services.AddTransient<IOperationsDbContextInitializer, OperationsDbContextInitializer>();
+            services.AddTransient<IOperationsRepository, OperationsRepository>();
 
             services.AddAuthentication("Bearer")
                 .AddIdentityServerAuthentication(options =>
@@ -81,7 +82,6 @@ namespace Ranger.Services.Operations
                     options.ApiName = "operationsApi";
 
                     //TODO: Change these to true
-                    options.EnableCaching = false;
                     options.RequireHttpsMetadata = false;
                 });
 
@@ -99,7 +99,7 @@ namespace Ranger.Services.Operations
 
         public void ConfigureContainer(ContainerBuilder builder)
         {
-            builder.AddRabbitMq(loggerFactory);
+            builder.AddRabbitMq();
             builder.RegisterGeneric(typeof(GenericEventHandler<>))
                 .As(typeof(IMessageHandler<>));
             builder.RegisterGeneric(typeof(GenericCommandHandler<>))

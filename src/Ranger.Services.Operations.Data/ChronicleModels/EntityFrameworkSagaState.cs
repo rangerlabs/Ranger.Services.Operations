@@ -6,22 +6,24 @@ namespace Ranger.Services.Operations.Data
 {
     public class EntityFrameworkSagaState : ISagaState
     {
-        public SagaId SagaId { get; }
+        [JsonIgnore]
+        public SagaId Id => SagaId;
+        public string SagaId { get; set; }
+        public string DatabaseUsername { get; set; }
+        public Type Type { get; set; }
+        public SagaStates State { get; set; }
+        public object Data { get; set; }
+        public Type DataType { get; set; }
 
-        public Type SagaType { get; }
-
-        public SagaStates State { get; private set; }
-
-        public object Data { get; private set; }
-
-        public Type DataType { get; }
-
-        [JsonConstructor]
-        public EntityFrameworkSagaState(SagaId sagaId, Type sagaType, SagaStates state, object data = null, Type dataType = null)
-            => (SagaId, SagaType, State, Data, DataType) = (sagaId, sagaType, state, data, dataType);
-
-        public static ISagaState Create(SagaId sagaId, Type sagaType, SagaStates state, object data = null, Type dataType = null)
-            => new EntityFrameworkSagaState(sagaId, sagaType, state, data, dataType);
+        public EntityFrameworkSagaState(SagaId id, Type type, string databaseUsername, SagaStates state, object data, Type dataType)
+        {
+            this.SagaId = id;
+            this.DatabaseUsername = databaseUsername;
+            this.Type = type;
+            this.State = state;
+            this.Data = data;
+            this.DataType = dataType;
+        }
 
         public void Update(SagaStates state, object data = null)
         {

@@ -12,7 +12,8 @@ using Ranger.Services.Operations.Messages.Tenants;
 namespace Ranger.Services.Operations
 {
     public class TenantOnboardingSaga : Saga<UserData>,
-        ISagaStartAction<TenantCreated>,
+        ISagaStartAction<CreateTenantSagaInitializer>,
+        ISagaAction<Messages.Tenants.TenantCreated>,
         ISagaAction<Messages.Identity.TenantInitialized>,
         ISagaAction<Messages.Geofences.TenantInitialized>,
         ISagaAction<Messages.Projects.TenantInitialized>,
@@ -33,12 +34,29 @@ namespace Ranger.Services.Operations
             this.logger = logger;
         }
 
+        public async Task HandleAsync(CreateTenantSagaInitializer message, ISagaContext context)
+        {
+            await Task.Run(() =>
+            {
+                Data.Domain = message.DomainName;
+                Data.Initiator = message.Email;
+                Data.FirstName = message.FirstName;
+                Data.LastName = message.LastName;
+                Data.Password = message.Password;
+                this.busPublisher.Send(new Messages.Tenants.CreateTenant(message.DomainName, message.OrganizationName, message.Email, message.FirstName, message.LastName, message.Password), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            });
+        }
+
+        public async Task CompensateAsync(CreateTenantSagaInitializer message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            await Task.CompletedTask;
+        }
+
         public async Task HandleAsync(TenantCreated message, ISagaContext context)
         {
             await Task.Run(() =>
             {
-                Data.Owner = message.Owner;
-                Data.Domain = message.DomainName;
                 Data.Token = message.Token;
                 Data.DatabaseUsername = message.DatabaseUsername;
                 Data.DatabasePassword = message.DatabasePassword;
@@ -94,7 +112,7 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                busPublisher.Send(new SendNewPrimaryOwnerEmail(Data.Owner.Email, Data.Owner.FirstName, Data.Domain, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendNewPrimaryOwnerEmail(Data.Initiator, Data.FirstName, Data.Domain, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
@@ -160,10 +178,10 @@ namespace Ranger.Services.Operations
             {
                 this.busPublisher.Send(
                    new CreateNewPrimaryOwner(
-                       Data.Owner.Email,
-                       Data.Owner.FirstName,
-                       Data.Owner.LastName,
-                       Data.Owner.Password,
+                       Data.Initiator,
+                       Data.FirstName,
+                       Data.LastName,
+                       Data.Password,
                        Data.Domain
                    ),
                    CorrelationContext.FromId(Guid.Parse(context.SagaId))
@@ -204,11 +222,16 @@ namespace Ranger.Services.Operations
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             await Task.CompletedTask;
         }
+
+
     }
 
     public class UserData
     {
-        public NewPrimaryOwner Owner { get; set; }
+        public string Password { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Initiator { get; set; }
         public string Domain { get; set; }
         public string Token { get; set; }
         public string DatabaseUsername { get; set; }
