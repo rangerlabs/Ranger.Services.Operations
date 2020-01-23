@@ -9,7 +9,7 @@ using Ranger.Services.Operations.Data;
 namespace Ranger.Services.Operations.Data.Migrations
 {
     [DbContext(typeof(OperationsDbContext))]
-    [Migration("20200122022846_Initial")]
+    [Migration("20200123032246_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -52,11 +52,6 @@ namespace Ranger.Services.Operations.Data.Migrations
 
                     b.Property<string>("Data")
                         .HasColumnName("data")
-                        .HasColumnType("text");
-
-                    b.Property<string>("DatabaseUsername")
-                        .IsRequired()
-                        .HasColumnName("database_username")
                         .HasColumnType("text");
 
                     b.Property<string>("SagaId")

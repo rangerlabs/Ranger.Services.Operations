@@ -11,9 +11,6 @@ namespace Ranger.Services.Operations.Data
         public int Id { get; set; }
 
         [Required]
-        public string DatabaseUsername { get; set; }
-
-        [Required]
         public string SagaId { get; set; }
 
         [Required]

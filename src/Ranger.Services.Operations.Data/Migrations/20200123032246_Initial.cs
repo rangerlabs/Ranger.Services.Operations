@@ -27,7 +27,6 @@ namespace Ranger.Services.Operations.Data.Migrations
                 {
                     id = table.Column<int>(nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    database_username = table.Column<string>(nullable: false),
                     saga_id = table.Column<string>(nullable: false),
                     saga_type = table.Column<string>(nullable: false),
                     data = table.Column<string>(nullable: true)

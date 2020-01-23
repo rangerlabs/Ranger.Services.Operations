@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
+using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Geofences;
@@ -9,16 +10,18 @@ using Ranger.Services.Operations.Messages.Operations;
 
 namespace Ranger.Services.Operations.Sagas
 {
-    public class DeleteGeofenceSaga : Saga<DeleteGeofenceData>,
+    public class DeleteGeofenceSaga : BaseSaga<DeleteGeofenceSaga, DeleteGeofenceData>,
         ISagaStartAction<DeleteGeofenceSagaInitializer>,
         ISagaAction<GeofenceDeleted>,
         ISagaAction<DeleteGeofenceRejected>
     {
         private readonly ILogger<DeleteGeofenceSaga> logger;
         private readonly IBusPublisher busPublisher;
+        private readonly ITenantsClient tenantsClient;
 
-        public DeleteGeofenceSaga(IBusPublisher busPublisher, ILogger<DeleteGeofenceSaga> logger)
+        public DeleteGeofenceSaga(IBusPublisher busPublisher, ITenantsClient tenantsClient, ILogger<DeleteGeofenceSaga> logger) : base(tenantsClient, logger)
         {
+            this.tenantsClient = tenantsClient;
             this.busPublisher = busPublisher;
             this.logger = logger;
         }
@@ -43,22 +46,21 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(DeleteGeofenceSagaInitializer message, ISagaContext context)
         {
-            await Task.Run(() =>
-            {
 
-                Data.FrontendRequest = message.FrontendRequest;
-                Data.Domain = message.Domain;
-                Data.Initiator = message.CommandingUserEmailOrTokenPrefix;
-                Data.ExternalId = message.ExternalId;
+            var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
+            Data.DatabaseUsername = databaseUsername;
+            Data.FrontendRequest = message.FrontendRequest;
+            Data.Domain = message.Domain;
+            Data.Initiator = message.CommandingUserEmailOrTokenPrefix;
+            Data.ExternalId = message.ExternalId;
 
-                var deleteGeofence = new DeleteGeofence(
-                    message.CommandingUserEmailOrTokenPrefix,
-                    message.Domain,
-                    message.ExternalId,
-                    message.ProjectId
-                );
-                busPublisher.Send(deleteGeofence, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
+            var deleteGeofence = new DeleteGeofence(
+                message.CommandingUserEmailOrTokenPrefix,
+                message.Domain,
+                message.ExternalId,
+                message.ProjectId
+            );
+            busPublisher.Send(deleteGeofence, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
         public async Task HandleAsync(GeofenceDeleted message, ISagaContext context)

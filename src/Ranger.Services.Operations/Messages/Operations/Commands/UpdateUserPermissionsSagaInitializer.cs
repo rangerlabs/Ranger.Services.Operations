@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 using Ranger.RabbitMQ;
 
-namespace Ranger.Services.Operations
+namespace Ranger.Services.Operations.Messages.Operations
 {
     [MessageNamespace("operations")]
-    public class UpdateUserPermissionsSagaInitializer : ICommand
+    public class UpdateUserPermissionsSagaInitializer : SagaInitializer, ICommand
     {
-        public string Domain { get; }
         public string Email { get; }
         public string CommandingUserEmail { get; }
         public string Role { get; }
@@ -31,7 +30,7 @@ namespace Ranger.Services.Operations
 
             this.Email = email;
             this.CommandingUserEmail = commandingUserEmail;
-            this.Domain = domain;
+            Domain = domain;
             this.Role = role;
             this.AuthorizedProjects = authorizedProjects;
         }

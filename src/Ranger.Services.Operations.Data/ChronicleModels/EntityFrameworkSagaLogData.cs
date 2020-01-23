@@ -9,16 +9,14 @@ namespace Ranger.Services.Operations.Data
         [JsonIgnore]
         public SagaId Id => SagaId;
         public string SagaId { get; set; }
-        public string DatabaseUsername { get; set; }
         public Type Type { get; }
         public long CreatedAt { get; }
         public object Message { get; }
         public Type MessageType { get; }
 
-        public EntityFrameworkSagaLogData(SagaId id, Type type, string databaseUsername, long createdAt, object message, Type messageType)
+        public EntityFrameworkSagaLogData(SagaId id, Type type, long createdAt, object message, Type messageType)
         {
             this.SagaId = id;
-            this.DatabaseUsername = databaseUsername;
             this.Type = type;
             this.CreatedAt = createdAt;
             this.Message = message;

@@ -8,11 +8,12 @@ using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Messages.Notifications;
+using Ranger.Services.Operations.Messages.Operations;
 using Ranger.Services.Operations.Messages.Projects;
 
 namespace Ranger.Services.Operations.Sagas
 {
-    public class UpdateUserPermissionsSaga : Saga<UpdateUserData>,
+    public class UpdateUserPermissionsSaga : BaseSaga<UpdateUserPermissionsSaga, UpdateUserData>,
         ISagaStartAction<UpdateUserPermissionsSagaInitializer>,
         ISagaAction<UserRoleUpdated>,
         ISagaAction<UpdateUserRoleRejected>,
@@ -25,7 +26,7 @@ namespace Ranger.Services.Operations.Sagas
         private readonly IProjectsClient projectsClient;
         private readonly ITenantsClient tenantsClient;
 
-        public UpdateUserPermissionsSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<UpdateUserPermissionsSaga> logger)
+        public UpdateUserPermissionsSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<UpdateUserPermissionsSaga> logger) : base(tenantsClient, logger)
         {
             this.projectsClient = projectsClient;
             this.tenantsClient = tenantsClient;
@@ -87,22 +88,21 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(UpdateUserPermissionsSagaInitializer message, ISagaContext context)
         {
-            await Task.Run(() =>
-            {
-                Data.Domain = message.Domain;
-                Data.UserEmail = message.Email;
-                Data.Initiator = message.CommandingUserEmail;
-                Data.NewAuthorizedProjects = message.AuthorizedProjects;
-                Data.NewRole = Enum.Parse<RolesEnum>(message.Role);
+            var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
+            Data.DatabaseUsername = databaseUsername;
+            Data.Domain = message.Domain;
+            Data.UserEmail = message.Email;
+            Data.Initiator = message.CommandingUserEmail;
+            Data.NewAuthorizedProjects = message.AuthorizedProjects;
+            Data.NewRole = Enum.Parse<RolesEnum>(message.Role);
 
-                var UpdateUserRole = new UpdateUserRole(
-                    message.Domain,
-                    message.Email,
-                    message.CommandingUserEmail,
-                    message.Role
-                );
-                busPublisher.Send(UpdateUserRole, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
+            var UpdateUserRole = new UpdateUserRole(
+                message.Domain,
+                message.Email,
+                message.CommandingUserEmail,
+                message.Role
+            );
+            busPublisher.Send(UpdateUserRole, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
         public async Task HandleAsync(UpdateUserRoleRejected message, ISagaContext context)

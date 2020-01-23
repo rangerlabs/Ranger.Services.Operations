@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
+using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Geofences;
@@ -9,16 +10,18 @@ using Ranger.Services.Operations.Messages.Operations;
 
 namespace Ranger.Services.Operations.Sagas
 {
-    public class UpsertGeofenceSaga : Saga<UpsertGeofenceData>,
+    public class UpsertGeofenceSaga : BaseSaga<UpsertGeofenceSaga, UpsertGeofenceData>,
         ISagaStartAction<UpsertGeofenceSagaInitializer>,
         ISagaAction<GeofenceUpserted>,
         ISagaAction<UpsertGeofenceRejected>
     {
         private readonly ILogger<UpsertGeofenceSaga> logger;
         private readonly IBusPublisher busPublisher;
+        private readonly ITenantsClient tenantsClient;
 
-        public UpsertGeofenceSaga(IBusPublisher busPublisher, ILogger<UpsertGeofenceSaga> logger)
+        public UpsertGeofenceSaga(IBusPublisher busPublisher, ITenantsClient tenantsClient, ILogger<UpsertGeofenceSaga> logger) : base(tenantsClient, logger)
         {
+            this.tenantsClient = tenantsClient;
             this.busPublisher = busPublisher;
             this.logger = logger;
         }
@@ -43,35 +46,33 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(UpsertGeofenceSagaInitializer message, ISagaContext context)
         {
-            await Task.Run(() =>
-            {
+            var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
+            Data.DatabaseUsername = databaseUsername;
+            Data.FrontendRequest = message.FrontendRequest;
+            Data.Domain = message.Domain;
+            Data.Initiator = message.CommandingUserEmailOrTokenPrefix;
+            Data.ExternalId = message.ExternalId;
 
-                Data.FrontendRequest = message.FrontendRequest;
-                Data.Domain = message.Domain;
-                Data.Initiator = message.CommandingUserEmailOrTokenPrefix;
-                Data.ExternalId = message.ExternalId;
-
-                var upsertGeofence = new UpsertGeofence(
-                    message.CommandingUserEmailOrTokenPrefix,
-                    message.Domain,
-                    message.ExternalId,
-                    message.ProjectId,
-                    message.Shape,
-                    message.Coordinates,
-                    message.Labels,
-                    message.IntegrationIds,
-                    message.Metadata,
-                    message.Description,
-                    message.Radius,
-                    message.Enabled,
-                    message.OnEnter,
-                    message.OnExit,
-                    message.ExpirationDate,
-                    message.LaunchDate,
-                    message.Schedule
-                );
-                busPublisher.Send(upsertGeofence, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
+            var upsertGeofence = new UpsertGeofence(
+                message.CommandingUserEmailOrTokenPrefix,
+                message.Domain,
+                message.ExternalId,
+                message.ProjectId,
+                message.Shape,
+                message.Coordinates,
+                message.Labels,
+                message.IntegrationIds,
+                message.Metadata,
+                message.Description,
+                message.Radius,
+                message.Enabled,
+                message.OnEnter,
+                message.OnExit,
+                message.ExpirationDate,
+                message.LaunchDate,
+                message.Schedule
+            );
+            busPublisher.Send(upsertGeofence, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
         public async Task HandleAsync(GeofenceUpserted message, ISagaContext context)

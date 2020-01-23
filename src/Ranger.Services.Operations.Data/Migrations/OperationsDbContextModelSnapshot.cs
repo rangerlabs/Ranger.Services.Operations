@@ -52,11 +52,6 @@ namespace Ranger.Services.Operations.Data.Migrations
                         .HasColumnName("data")
                         .HasColumnType("text");
 
-                    b.Property<string>("DatabaseUsername")
-                        .IsRequired()
-                        .HasColumnName("database_username")
-                        .HasColumnType("text");
-
                     b.Property<string>("SagaId")
                         .IsRequired()
                         .HasColumnName("saga_id")

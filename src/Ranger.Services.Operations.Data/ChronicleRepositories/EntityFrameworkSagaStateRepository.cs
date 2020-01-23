@@ -41,33 +41,32 @@ namespace Ranger.Services.Operations.Data
 
         public async Task WriteAsync(ISagaState state)
         {
-            if (state is EntityFrameworkSagaState efSagaState)
+            if (state is null)
             {
-                var entityFrameworkSagaState = new EntityFrameworkSagaState(efSagaState.Id, efSagaState.Type, efSagaState.DatabaseUsername, efSagaState.State, efSagaState?.Data, efSagaState?.Data.GetType());
+                throw new ArgumentNullException($"{nameof(state)} was null.");
+            }
 
-                var serializedSagaState = JsonConvert.SerializeObject(entityFrameworkSagaState);
-                var cachedSagaState = await context.SagaStates.FirstOrDefaultAsync(ss => ss.SagaId == efSagaState.SagaId && ss.SagaType == efSagaState.Type.ToString());
-                if (cachedSagaState is null)
+            var entityFrameworkSagaState = new EntityFrameworkSagaState(state.Id, state.Type, (state.Data as BaseSagaData).DatabaseUsername, state.State, state.Data, state.Data.GetType());
+
+            var serializedSagaState = JsonConvert.SerializeObject(entityFrameworkSagaState);
+            var cachedSagaState = await context.SagaStates.FirstOrDefaultAsync(ss => ss.SagaId == state.Id && ss.SagaType == state.Type.ToString());
+            if (cachedSagaState is null)
+            {
+                var sagaState = new SagaState
                 {
-                    var sagaState = new SagaState
-                    {
-                        SagaId = efSagaState.Id,
-                        SagaType = efSagaState.Type.ToString(),
-                        Data = serializedSagaState
-                    };
-                    context.SagaStates.Add(sagaState);
-                }
-                else
-                {
-                    cachedSagaState.Data = serializedSagaState;
-                    context.SagaStates.Update(cachedSagaState);
-                }
-                await context.SaveChangesAsync();
+                    SagaId = state.Id,
+                    DatabaseUsername = (state.Data as BaseSagaData).DatabaseUsername,
+                    SagaType = state.Type.ToString(),
+                    Data = serializedSagaState
+                };
+                context.SagaStates.Add(sagaState);
             }
             else
             {
-                throw new ArgumentNullException(nameof(state));
+                cachedSagaState.Data = serializedSagaState;
+                context.SagaStates.Update(cachedSagaState);
             }
+            await context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(SagaId sagaId, Type sagaType)

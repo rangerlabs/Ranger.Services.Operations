@@ -80,8 +80,6 @@ namespace Ranger.Services.Operations
                 {
                     options.Authority = "http://identity:5000/auth";
                     options.ApiName = "operationsApi";
-
-                    //TODO: Change these to true
                     options.RequireHttpsMetadata = false;
                 });
 

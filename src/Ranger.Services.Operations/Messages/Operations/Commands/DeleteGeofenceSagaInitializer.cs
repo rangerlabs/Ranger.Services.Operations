@@ -3,7 +3,7 @@ using Ranger.RabbitMQ;
 namespace Ranger.Services.Operations.Messages.Operations
 {
     [MessageNamespaceAttribute("operations")]
-    public class DeleteGeofenceSagaInitializer : ICommand
+    public class DeleteGeofenceSagaInitializer : SagaInitializer, ICommand
     {
         public DeleteGeofenceSagaInitializer(bool frontendRequest, string commandingUserEmailOrTokenPrefix, string domain, string externalId, string projectId)
         {
@@ -27,13 +27,12 @@ namespace Ranger.Services.Operations.Messages.Operations
             this.FrontendRequest = frontendRequest;
             this.CommandingUserEmailOrTokenPrefix = commandingUserEmailOrTokenPrefix;
 
-            this.Domain = domain;
+            Domain = domain;
             this.ExternalId = externalId;
             this.ProjectId = projectId;
         }
         public bool FrontendRequest { get; }
         public string CommandingUserEmailOrTokenPrefix { get; }
-        public string Domain { get; }
         public string ExternalId { get; }
         public string ProjectId { get; }
     }

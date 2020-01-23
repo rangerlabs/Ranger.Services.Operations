@@ -8,11 +8,12 @@ using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Messages.Notifications;
+using Ranger.Services.Operations.Messages.Operations;
 using Ranger.Services.Operations.Messages.Projects;
 
 namespace Ranger.Services.Operations
 {
-    public class CreateUserSaga : Saga<CreateUserData>,
+    public class CreateUserSaga : BaseSaga<CreateUserSaga, CreateUserData>,
         ISagaStartAction<CreateUserSagaInitializer>,
         ISagaAction<UserCreated>,
         ISagaAction<CreateUserRejected>,
@@ -27,7 +28,7 @@ namespace Ranger.Services.Operations
         private readonly IProjectsClient projectsClient;
         private readonly ITenantsClient tenantsClient;
 
-        public CreateUserSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<CreateUserSaga> logger)
+        public CreateUserSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<CreateUserSaga> logger) : base(tenantsClient, logger)
         {
             this.projectsClient = projectsClient;
             this.tenantsClient = tenantsClient;
@@ -47,11 +48,10 @@ namespace Ranger.Services.Operations
 
         public async Task CompensateAsync(CreateUserSagaInitializer message, ISagaContext context)
         {
-            await Task.Run(() =>
-            {
-                logger.LogInformation("Calling compensate for CreateNewUserSagaInitializer.");
-                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
+            var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
+            Data.DatabaseUsername = databaseUsername;
+            logger.LogInformation("Calling compensate for CreateNewUserSagaInitializer.");
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
         public async Task CompensateAsync(CreateUserRejected message, ISagaContext context)

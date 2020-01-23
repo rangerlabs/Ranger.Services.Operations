@@ -1,7 +1,4 @@
-using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Chronicle;
 using Ranger.Common;
 
 namespace Ranger.Services.Operations.Data

@@ -7,7 +7,7 @@ using Ranger.RabbitMQ;
 namespace Ranger.Services.Operations.Messages.Operations
 {
     [MessageNamespaceAttribute("operations")]
-    public class CreateGeofenceSagaInitializer : ICommand
+    public class CreateGeofenceSagaInitializer : SagaInitializer, ICommand
     {
         public CreateGeofenceSagaInitializer(bool frontendRequest, string commandingUserEmailOrTokenPrefix, string domain, string externalId, string projectId, GeofenceShapeEnum shape, IEnumerable<LngLat> coordinates, IEnumerable<string> labels = null, IEnumerable<string> integrationIds = null, IDictionary<string, object> metadata = null, string description = null, int radius = 0, bool enabled = true, bool onEnter = true, bool onExit = true, DateTime? expirationDate = null, DateTime? launchDate = null, Schedule schedule = null)
         {
@@ -43,7 +43,7 @@ namespace Ranger.Services.Operations.Messages.Operations
             this.Shape = shape;
             this.Radius = radius;
 
-            this.Domain = domain;
+            Domain = domain;
             this.ExternalId = externalId;
             this.ProjectId = projectId;
             this.Labels = labels ?? new List<string>();
@@ -59,7 +59,6 @@ namespace Ranger.Services.Operations.Messages.Operations
         }
         public bool FrontendRequest { get; }
         public string CommandingUserEmailOrTokenPrefix { get; }
-        public string Domain { get; }
         public string ExternalId { get; }
         public string ProjectId { get; }
         public IEnumerable<string> Labels { get; }

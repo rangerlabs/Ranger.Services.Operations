@@ -31,7 +31,7 @@ namespace Ranger.Services.Operations.Data
                 state.Update(state.State, data);
             }
 
-            var sagaLogs = await GetSagaLogs(id, databaseUsername);
+            var sagaLogs = await GetSagaLogs(id);
 
             var startTime = string.Empty;
             var endTime = string.Empty;
@@ -76,10 +76,10 @@ namespace Ranger.Services.Operations.Data
             return (startDate, endDateTime);
         }
 
-        private async Task<IEnumerable<ISagaLogData>> GetSagaLogs(SagaId id, string databaseUsername)
+        private async Task<IEnumerable<ISagaLogData>> GetSagaLogs(SagaId id)
         {
             IList<EntityFrameworkSagaLogData> deserializedSagaLogDatas = new List<EntityFrameworkSagaLogData>();
-            var sagaLogDataStrings = await context.SagaLogDatas.Where(_ => _.SagaId == id && _.DatabaseUsername == databaseUsername).ToListAsync();
+            var sagaLogDataStrings = await context.SagaLogDatas.Where(_ => _.SagaId == id).ToListAsync();
             sagaLogDataStrings.ForEach(sld =>
             {
                 if (!String.IsNullOrWhiteSpace(sld.Data))
@@ -87,7 +87,7 @@ namespace Ranger.Services.Operations.Data
 
                     var sagaLogData = JsonConvert.DeserializeObject<EntityFrameworkSagaLogData>(sld.Data);
                     var message = (sagaLogData.Message as JObject).ToObject(sagaLogData.MessageType);
-                    deserializedSagaLogDatas.Add(new EntityFrameworkSagaLogData(sagaLogData.Id, sagaLogData.Type, sagaLogData.DatabaseUsername, sagaLogData.CreatedAt, message, message.GetType()));
+                    deserializedSagaLogDatas.Add(new EntityFrameworkSagaLogData(sagaLogData.Id, sagaLogData.Type, sagaLogData.CreatedAt, message, message.GetType()));
                 }
             });
             return deserializedSagaLogDatas;
