@@ -80,7 +80,7 @@ namespace Ranger.Services.Operations.Sagas
             logger.LogInformation("Calling handle for GeofenceUpserted.");
             if (Data.FrontendRequest)
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-updated", $"Geofence {Data.ExternalId} was successfully updated.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-updated", $"Geofence {Data.ExternalId} was successfully updated.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed, message.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 await CompleteAsync();
             }
             else
