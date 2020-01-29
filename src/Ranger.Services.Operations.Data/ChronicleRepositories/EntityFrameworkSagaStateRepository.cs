@@ -43,19 +43,20 @@ namespace Ranger.Services.Operations.Data
         {
             if (state is null)
             {
-                throw new ArgumentNullException(nameof(state));
+                throw new ArgumentNullException($"{nameof(state)} was null.");
             }
 
-            var entityFrameworkSagaState = new EntityFrameworkSagaState(state.SagaId, state.SagaType, state.State, state?.Data, state?.Data.GetType());
+            var entityFrameworkSagaState = new EntityFrameworkSagaState(state.Id, state.Type, (state.Data as BaseSagaData).DatabaseUsername, state.State, state.Data, state.Data.GetType());
 
             var serializedSagaState = JsonConvert.SerializeObject(entityFrameworkSagaState);
-            var cachedSagaState = await context.SagaStates.FirstOrDefaultAsync(ss => ss.SagaId == state.SagaId && ss.SagaType == state.SagaType.ToString());
+            var cachedSagaState = await context.SagaStates.FirstOrDefaultAsync(ss => ss.SagaId == state.Id && ss.SagaType == state.Type.ToString());
             if (cachedSagaState is null)
             {
                 var sagaState = new SagaState
                 {
-                    SagaId = state.SagaId,
-                    SagaType = state.SagaType.ToString(),
+                    SagaId = state.Id,
+                    DatabaseUsername = (state.Data as BaseSagaData).DatabaseUsername,
+                    SagaType = state.Type.ToString(),
                     Data = serializedSagaState
                 };
                 context.SagaStates.Add(sagaState);

@@ -12,7 +12,7 @@ namespace Ranger.Services.Operations.Data.Migrations
                 columns: table => new
                 {
                     id = table.Column<int>(nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     friendly_name = table.Column<string>(nullable: true),
                     xml = table.Column<string>(nullable: true)
                 },
@@ -26,7 +26,7 @@ namespace Ranger.Services.Operations.Data.Migrations
                 columns: table => new
                 {
                     id = table.Column<int>(nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     saga_id = table.Column<string>(nullable: false),
                     saga_type = table.Column<string>(nullable: false),
                     data = table.Column<string>(nullable: true)
@@ -41,6 +41,7 @@ namespace Ranger.Services.Operations.Data.Migrations
                 columns: table => new
                 {
                     saga_id = table.Column<string>(nullable: false),
+                    database_username = table.Column<string>(nullable: false),
                     saga_type = table.Column<string>(nullable: false),
                     data = table.Column<string>(nullable: true)
                 },

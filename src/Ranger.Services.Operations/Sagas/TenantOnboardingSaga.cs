@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
+using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Identity;
@@ -11,8 +12,10 @@ using Ranger.Services.Operations.Messages.Tenants;
 
 namespace Ranger.Services.Operations
 {
-    public class TenantOnboardingSaga : Saga<UserData>,
-        ISagaStartAction<TenantCreated>,
+    //This is the one time not to use a SagaInitializer because DatabaseUsername has not yet been assigned 
+    //and a SagaState cannot be persisted as a result of the database constraint
+    public class TenantOnboardingSaga : BaseSaga<TenantOnboardingSaga, UserData>,
+        ISagaStartAction<Messages.Tenants.TenantCreated>,
         ISagaAction<Messages.Identity.TenantInitialized>,
         ISagaAction<Messages.Geofences.TenantInitialized>,
         ISagaAction<Messages.Projects.TenantInitialized>,
@@ -26,9 +29,11 @@ namespace Ranger.Services.Operations
     {
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<TenantOnboardingSaga> logger;
+        private readonly ITenantsClient tenantsClient;
 
-        public TenantOnboardingSaga(IBusPublisher busPublisher, ILogger<TenantOnboardingSaga> logger)
+        public TenantOnboardingSaga(IBusPublisher busPublisher, ITenantsClient tenantsClient, ILogger<TenantOnboardingSaga> logger) : base(tenantsClient, logger)
         {
+            this.tenantsClient = tenantsClient;
             this.busPublisher = busPublisher;
             this.logger = logger;
         }
@@ -37,9 +42,13 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                Data.Owner = message.Owner;
-                Data.Domain = message.DomainName;
                 Data.Token = message.Token;
+                Data.Domain = message.Domain;
+                Data.Initiator = message.Email;
+                Data.FirstName = message.FirstName;
+                Data.LastName = message.LastName;
+                Data.Password = message.Password;
+                Data.OrganizationName = message.OrganizationName;
                 Data.DatabaseUsername = message.DatabaseUsername;
                 Data.DatabasePassword = message.DatabasePassword;
                 this.busPublisher.Send(new Messages.Identity.InitializeTenant(message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
@@ -59,10 +68,10 @@ namespace Ranger.Services.Operations
             });
             await Task.CompletedTask;
             await Task.Run(() =>
-                this.busPublisher.Send(
-                    new DeleteTenant(Data.Domain),
-                    CorrelationContext.FromId(Guid.Parse(context.SagaId))
-                )
+               this.busPublisher.Send(
+                   new DeleteTenant(Data.Domain),
+                   CorrelationContext.FromId(Guid.Parse(context.SagaId))
+               )
             );
         }
 
@@ -94,7 +103,7 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                busPublisher.Send(new SendNewPrimaryOwnerEmail(Data.Owner.Email, Data.Owner.FirstName, Data.Domain, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendNewPrimaryOwnerEmail(Data.Initiator, Data.FirstName, Data.Domain, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
@@ -159,15 +168,15 @@ namespace Ranger.Services.Operations
             await Task.Run(() =>
             {
                 this.busPublisher.Send(
-                   new CreateNewPrimaryOwner(
-                       Data.Owner.Email,
-                       Data.Owner.FirstName,
-                       Data.Owner.LastName,
-                       Data.Owner.Password,
-                       Data.Domain
-                   ),
-                   CorrelationContext.FromId(Guid.Parse(context.SagaId))
-               );
+                    new CreateNewPrimaryOwner(
+                        Data.Initiator,
+                        Data.FirstName,
+                        Data.LastName,
+                        Data.Password,
+                        Data.Domain
+                    ),
+                    CorrelationContext.FromId(Guid.Parse(context.SagaId))
+                );
             });
         }
 
@@ -206,13 +215,14 @@ namespace Ranger.Services.Operations
         }
     }
 
-    public class UserData
+    public class UserData : BaseSagaData
     {
-        public NewPrimaryOwner Owner { get; set; }
-        public string Domain { get; set; }
+        public string Password { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
         public string Token { get; set; }
-        public string DatabaseUsername { get; set; }
         public string DatabasePassword { get; set; }
+        public string OrganizationName { get; set; }
         public List<string> ServicesInitialized { get; set; } = new List<string>();
     }
 }

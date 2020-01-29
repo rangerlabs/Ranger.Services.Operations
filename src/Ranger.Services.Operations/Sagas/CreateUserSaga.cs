@@ -8,11 +8,12 @@ using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Messages.Notifications;
+using Ranger.Services.Operations.Messages.Operations;
 using Ranger.Services.Operations.Messages.Projects;
 
 namespace Ranger.Services.Operations
 {
-    public class CreateUserSaga : Saga<CreateUserData>,
+    public class CreateUserSaga : BaseSaga<CreateUserSaga, CreateUserData>,
         ISagaStartAction<CreateUserSagaInitializer>,
         ISagaAction<UserCreated>,
         ISagaAction<CreateUserRejected>,
@@ -27,7 +28,7 @@ namespace Ranger.Services.Operations
         private readonly IProjectsClient projectsClient;
         private readonly ITenantsClient tenantsClient;
 
-        public CreateUserSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<CreateUserSaga> logger)
+        public CreateUserSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<CreateUserSaga> logger) : base(tenantsClient, logger)
         {
             this.projectsClient = projectsClient;
             this.tenantsClient = tenantsClient;
@@ -47,11 +48,10 @@ namespace Ranger.Services.Operations
 
         public async Task CompensateAsync(CreateUserSagaInitializer message, ISagaContext context)
         {
-            await Task.Run(() =>
-            {
-                logger.LogInformation("Calling compensate for CreateNewUserSagaInitializer.");
-                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
+            var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
+            Data.DatabaseUsername = databaseUsername;
+            logger.LogInformation("Calling compensate for CreateNewUserSagaInitializer.");
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
         public async Task CompensateAsync(CreateUserRejected message, ISagaContext context)
@@ -78,7 +78,7 @@ namespace Ranger.Services.Operations
         public async Task HandleAsync(UpdateUserProjectsRejected message, ISagaContext context)
         {
             var notificationText = $"Successfully created {Data.UserEmail} but failed to set their authorized projects. Verify the selected projects and try again.";
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
@@ -112,7 +112,7 @@ namespace Ranger.Services.Operations
             {
                 if (Data.NewAuthorizedProjects.Count() > 0)
                 {
-                    busPublisher.Send(new UpdateUserProjects(Data.Domain, Data.NewAuthorizedProjects, message.UserId, message.Email, Data.CommandingUserEmail), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new UpdateUserProjects(Data.Domain, Data.NewAuthorizedProjects, message.UserId, message.Email, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 else
                 {
@@ -124,7 +124,7 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(SendNewUserEmailSent message, ISagaContext context)
         {
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} was succesfully created.", Data.Domain, Data.CommandingUserEmail, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} was succesfully created.", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
@@ -134,7 +134,7 @@ namespace Ranger.Services.Operations
             {
                 Data.Domain = message.Domain;
                 Data.UserEmail = message.Email;
-                Data.CommandingUserEmail = message.CommandingUserEmail;
+                Data.Initiator = message.CommandingUserEmail;
                 Data.NewAuthorizedProjects = message.AuthorizedProjects;
                 Data.NewRole = Enum.Parse<RolesEnum>(message.Role);
 
@@ -179,14 +179,12 @@ namespace Ranger.Services.Operations
         }
     }
 
-    public class CreateUserData
+    public class CreateUserData : BaseSagaData
     {
         public string RejectReason { get; set; }
-        public string CommandingUserEmail { get; set; }
         public string FirstName { get; set; }
         public string UserId { get; set; }
         public string UserEmail { get; set; }
-        public string Domain { get; set; }
         public string Token { get; set; }
         public RolesEnum NewRole { get; set; }
         public IEnumerable<string> NewAuthorizedProjects { get; set; }

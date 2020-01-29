@@ -6,23 +6,21 @@ namespace Ranger.Services.Operations.Data
 {
     public class EntityFrameworkSagaLogData : ISagaLogData
     {
-        public SagaId SagaId { get; }
-        public Type SagaType { get; }
+        [JsonIgnore]
+        public SagaId Id => SagaId;
+        public string SagaId { get; set; }
+        public Type Type { get; }
         public long CreatedAt { get; }
         public object Message { get; }
         public Type MessageType { get; }
 
-        [JsonConstructor]
-        public EntityFrameworkSagaLogData(SagaId sagaId, Type sagaType, long createdAt, object message, Type messageType)
+        public EntityFrameworkSagaLogData(SagaId id, Type type, long createdAt, object message, Type messageType)
         {
-            this.SagaId = sagaId;
-            this.SagaType = sagaType;
+            this.SagaId = id;
+            this.Type = type;
             this.CreatedAt = createdAt;
             this.Message = message;
             this.MessageType = messageType;
         }
-
-        public static ISagaLogData Create(SagaId sagaId, Type sagaType, object message)
-                    => new EntityFrameworkSagaLogData(sagaId, sagaType, DateTimeOffset.Now.ToUnixTimeMilliseconds(), message, message.GetType());
     }
 }

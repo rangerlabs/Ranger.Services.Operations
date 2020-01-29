@@ -9,28 +9,32 @@ using Ranger.Services.Operations.Data;
 namespace Ranger.Services.Operations.Data.Migrations
 {
     [DbContext(typeof(OperationsDbContext))]
-    [Migration("20190909132235_Initial")]
+    [Migration("20200123032246_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
-                .HasAnnotation("ProductVersion", "2.2.4-servicing-10062")
+                .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn)
+                .HasAnnotation("ProductVersion", "3.1.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("id");
+                        .HasColumnName("id")
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<string>("FriendlyName")
-                        .HasColumnName("friendly_name");
+                        .HasColumnName("friendly_name")
+                        .HasColumnType("text");
 
                     b.Property<string>("Xml")
-                        .HasColumnName("xml");
+                        .HasColumnName("xml")
+                        .HasColumnType("text");
 
                     b.HasKey("Id")
                         .HasName("pk_data_protection_keys");
@@ -42,18 +46,23 @@ namespace Ranger.Services.Operations.Data.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("id");
+                        .HasColumnName("id")
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<string>("Data")
-                        .HasColumnName("data");
+                        .HasColumnName("data")
+                        .HasColumnType("text");
 
                     b.Property<string>("SagaId")
                         .IsRequired()
-                        .HasColumnName("saga_id");
+                        .HasColumnName("saga_id")
+                        .HasColumnType("text");
 
                     b.Property<string>("SagaType")
                         .IsRequired()
-                        .HasColumnName("saga_type");
+                        .HasColumnName("saga_type")
+                        .HasColumnType("text");
 
                     b.HasKey("Id")
                         .HasName("pk_saga_log_datas");
@@ -64,15 +73,22 @@ namespace Ranger.Services.Operations.Data.Migrations
             modelBuilder.Entity("Ranger.Services.Operations.Data.SagaState", b =>
                 {
                     b.Property<string>("SagaId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnName("saga_id");
+                        .HasColumnName("saga_id")
+                        .HasColumnType("text");
 
                     b.Property<string>("Data")
-                        .HasColumnName("data");
+                        .HasColumnName("data")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DatabaseUsername")
+                        .IsRequired()
+                        .HasColumnName("database_username")
+                        .HasColumnType("text");
 
                     b.Property<string>("SagaType")
                         .IsRequired()
-                        .HasColumnName("saga_type");
+                        .HasColumnName("saga_type")
+                        .HasColumnType("text");
 
                     b.HasKey("SagaId")
                         .HasName("pk_saga_states");

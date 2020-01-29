@@ -50,7 +50,7 @@ namespace Ranger.Services.Operations.Data
 
                     var sagaLogData = JsonConvert.DeserializeObject<EntityFrameworkSagaLogData>(sld.Data);
                     var message = (sagaLogData.Message as JObject).ToObject(sagaLogData.MessageType);
-                    deserializedSagaLogDatas.Add(new EntityFrameworkSagaLogData(sagaLogData.SagaId, sagaLogData.SagaType, sagaLogData.CreatedAt, message, message.GetType()));
+                    deserializedSagaLogDatas.Add(new EntityFrameworkSagaLogData(sagaLogData.Id, sagaLogData.Type, sagaLogData.CreatedAt, message, message.GetType()));
                 }
             });
             return deserializedSagaLogDatas;
@@ -60,21 +60,21 @@ namespace Ranger.Services.Operations.Data
         {
             if (sagaLogData is null)
             {
-                throw new ArgumentException(nameof(sagaLogData));
+                throw new ArgumentException($"nameof(sagaLogData) was null.");
             }
 
             var entityFrameworkSagaLogData = new EntityFrameworkSagaLogData(
-                sagaLogData.SagaId,
-                sagaLogData.SagaType,
+                sagaLogData.Id,
+                sagaLogData.Type,
                 sagaLogData.CreatedAt,
                 sagaLogData.Message,
                 sagaLogData.Message.GetType()
-                );
+            );
 
             var logData = new SagaLogData
             {
-                SagaId = sagaLogData.SagaId,
-                SagaType = sagaLogData.SagaType.ToString(),
+                SagaId = sagaLogData.Id,
+                SagaType = sagaLogData.Type.ToString(),
                 Data = JsonConvert.SerializeObject(entityFrameworkSagaLogData)
             };
 

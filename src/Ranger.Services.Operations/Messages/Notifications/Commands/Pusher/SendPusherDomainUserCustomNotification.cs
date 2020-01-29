@@ -11,14 +11,16 @@ namespace Ranger.Services.Operations
         public string Domain { get; }
         public string UserEmail { get; }
         public OperationsStateEnum State { get; }
+        public string ResourceId { get; }
 
-        public SendPusherDomainUserCustomNotification(string eventName, string message, string domain, string userEmail, OperationsStateEnum state)
+        public SendPusherDomainUserCustomNotification(string eventName, string message, string domain, string userEmail, OperationsStateEnum state, string resourceId = "")
         {
             this.EventName = eventName;
             this.Message = message;
             this.Domain = domain;
             this.UserEmail = userEmail;
             this.State = state;
+            this.ResourceId = resourceId;
         }
     }
 }
