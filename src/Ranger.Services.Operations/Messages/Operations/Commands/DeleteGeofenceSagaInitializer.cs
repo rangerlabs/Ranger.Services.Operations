@@ -1,3 +1,4 @@
+using System;
 using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations.Messages.Operations
@@ -5,7 +6,7 @@ namespace Ranger.Services.Operations.Messages.Operations
     [MessageNamespaceAttribute("operations")]
     public class DeleteGeofenceSagaInitializer : SagaInitializer, ICommand
     {
-        public DeleteGeofenceSagaInitializer(bool frontendRequest, string commandingUserEmailOrTokenPrefix, string domain, string externalId, string projectId)
+        public DeleteGeofenceSagaInitializer(bool frontendRequest, string commandingUserEmailOrTokenPrefix, string domain, string externalId, Guid projectId)
         {
             if (string.IsNullOrWhiteSpace(commandingUserEmailOrTokenPrefix))
             {
@@ -19,10 +20,7 @@ namespace Ranger.Services.Operations.Messages.Operations
             {
                 throw new System.ArgumentException($"{nameof(externalId)} was null or whitespace.");
             }
-            if (string.IsNullOrWhiteSpace(projectId))
-            {
-                throw new System.ArgumentException($"{nameof(projectId)} was null or whitespace.");
-            }
+
 
             this.FrontendRequest = frontendRequest;
             this.CommandingUserEmailOrTokenPrefix = commandingUserEmailOrTokenPrefix;
@@ -34,6 +32,6 @@ namespace Ranger.Services.Operations.Messages.Operations
         public bool FrontendRequest { get; }
         public string CommandingUserEmailOrTokenPrefix { get; }
         public string ExternalId { get; }
-        public string ProjectId { get; }
+        public Guid ProjectId { get; }
     }
 }

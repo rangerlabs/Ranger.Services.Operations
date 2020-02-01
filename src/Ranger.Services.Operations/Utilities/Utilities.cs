@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,7 +9,7 @@ namespace Ranger.Services.Operations
 {
     public static class Utilities
     {
-        public static async Task<IEnumerable<string>> GetProjectNamesForAuthorizedProjectsAsync(string domain, string email, RolesEnum role, IEnumerable<string> authorizedProjects, IProjectsClient projectsClient)
+        public static async Task<IEnumerable<string>> GetProjectNamesForAuthorizedProjectsAsync(string domain, string email, RolesEnum role, IEnumerable<Guid> authorizedProjects, IProjectsClient projectsClient)
         {
             var projects = await projectsClient.GetAllProjectsForUserAsync<IEnumerable<ProjectModel>>(domain, email).ConfigureAwait(false);
             IEnumerable<string> authorizedProjectNames = null;

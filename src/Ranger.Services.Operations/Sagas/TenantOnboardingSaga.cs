@@ -17,11 +17,9 @@ namespace Ranger.Services.Operations
     public class TenantOnboardingSaga : BaseSaga<TenantOnboardingSaga, UserData>,
         ISagaStartAction<Messages.Tenants.TenantCreated>,
         ISagaAction<Messages.Identity.TenantInitialized>,
-        ISagaAction<Messages.Geofences.TenantInitialized>,
         ISagaAction<Messages.Projects.TenantInitialized>,
         ISagaAction<Messages.Integrations.TenantInitialized>,
         ISagaAction<Messages.Identity.InitializeTenantRejected>,
-        ISagaAction<Messages.Geofences.InitializeTenantRejected>,
         ISagaAction<Messages.Projects.InitializeTenantRejected>,
         ISagaAction<Messages.Integrations.InitializeTenantRejected>,
         ISagaAction<NewPrimaryOwnerCreated>,
@@ -64,7 +62,6 @@ namespace Ranger.Services.Operations
                 this.busPublisher.Send(new Messages.Identity.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 this.busPublisher.Send(new Messages.Projects.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 this.busPublisher.Send(new Messages.Integrations.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                this.busPublisher.Send(new Messages.Geofences.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
             await Task.CompletedTask;
             await Task.Run(() =>
@@ -130,17 +127,6 @@ namespace Ranger.Services.Operations
             await Task.CompletedTask;
         }
 
-        public async Task HandleAsync(Messages.Geofences.InitializeTenantRejected message, ISagaContext context)
-        {
-            await RejectAsync();
-        }
-
-        public async Task CompensateAsync(Messages.Geofences.InitializeTenantRejected message, ISagaContext context)
-        {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
-        }
-
         public async Task HandleAsync(Messages.Projects.InitializeTenantRejected message, ISagaContext context)
         {
             await RejectAsync();
@@ -158,29 +144,6 @@ namespace Ranger.Services.Operations
         }
 
         public async Task CompensateAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
-        {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
-        }
-
-        public async Task HandleAsync(Messages.Geofences.TenantInitialized message, ISagaContext context)
-        {
-            await Task.Run(() =>
-            {
-                this.busPublisher.Send(
-                    new CreateNewPrimaryOwner(
-                        Data.Initiator,
-                        Data.FirstName,
-                        Data.LastName,
-                        Data.Password,
-                        Data.Domain
-                    ),
-                    CorrelationContext.FromId(Guid.Parse(context.SagaId))
-                );
-            });
-        }
-
-        public async Task CompensateAsync(Messages.Geofences.TenantInitialized message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             await Task.CompletedTask;
@@ -204,8 +167,17 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                this.busPublisher.Send(new Messages.Geofences.InitializeTenant(Data.DatabaseUsername, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
+                this.busPublisher.Send(
+                    new CreateNewPrimaryOwner(
+                        Data.Initiator,
+                        Data.FirstName,
+                        Data.LastName,
+                        Data.Password,
+                        Data.Domain
+                    ),
+                    CorrelationContext.FromId(Guid.Parse(context.SagaId))
+                );
+            }); ;
         }
 
         public async Task CompensateAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
