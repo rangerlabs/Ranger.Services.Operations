@@ -54,7 +54,7 @@ namespace Ranger.Services.Operations
             Data.Initiator = message.CommandingUserEmail;
             Data.Name = message.Name;
 
-            var createIntegration = new CreateIntegration(message.Domain, message.CommandingUserEmail, message.MessageJsonContent, message.IntegrationType);
+            var createIntegration = new CreateIntegration(message.Domain, message.CommandingUserEmail, message.ProjectId, message.MessageJsonContent, message.IntegrationType);
             busPublisher.Send(createIntegration, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
