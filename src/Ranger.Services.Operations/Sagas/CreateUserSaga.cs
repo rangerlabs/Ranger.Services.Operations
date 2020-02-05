@@ -48,8 +48,11 @@ namespace Ranger.Services.Operations
 
         public async Task CompensateAsync(CreateUserSagaInitializer message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for CreateNewUserSagaInitializer.");
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            await Task.Run(() =>
+            {
+                logger.LogInformation("Calling compensate for CreateNewUserSagaInitializer.");
+                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            );
         }
 
         public async Task CompensateAsync(CreateUserRejected message, ISagaContext context)
