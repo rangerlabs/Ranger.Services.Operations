@@ -48,8 +48,6 @@ namespace Ranger.Services.Operations
 
         public async Task CompensateAsync(CreateUserSagaInitializer message, ISagaContext context)
         {
-            var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
-            Data.DatabaseUsername = databaseUsername;
             logger.LogInformation("Calling compensate for CreateNewUserSagaInitializer.");
             busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
@@ -130,25 +128,24 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(CreateUserSagaInitializer message, ISagaContext context)
         {
-            await Task.Run(() =>
-            {
-                Data.Domain = message.Domain;
-                Data.UserEmail = message.Email;
-                Data.Initiator = message.CommandingUserEmail;
-                Data.NewAuthorizedProjects = message.AuthorizedProjects;
-                Data.NewRole = Enum.Parse<RolesEnum>(message.Role);
+            var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
+            Data.DatabaseUsername = databaseUsername;
+            Data.Domain = message.Domain;
+            Data.UserEmail = message.Email;
+            Data.Initiator = message.CommandingUserEmail;
+            Data.NewAuthorizedProjects = message.AuthorizedProjects;
+            Data.NewRole = Enum.Parse<RolesEnum>(message.Role);
 
-                var createNewUser = new CreateUser(
-                    message.Domain,
-                    message.Email,
-                    message.FirstName,
-                    message.LastName,
-                    message.Role,
-                    message.CommandingUserEmail,
-                    message.AuthorizedProjects
-                );
-                busPublisher.Send(createNewUser, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
+            var createNewUser = new CreateUser(
+                message.Domain,
+                message.Email,
+                message.FirstName,
+                message.LastName,
+                message.Role,
+                message.CommandingUserEmail,
+                message.AuthorizedProjects
+            );
+            busPublisher.Send(createNewUser, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
         public async Task HandleAsync(CreateUserRejected message, ISagaContext context)
