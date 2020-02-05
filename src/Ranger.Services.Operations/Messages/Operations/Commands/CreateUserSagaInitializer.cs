@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Ranger.RabbitMQ;
 
@@ -11,9 +12,9 @@ namespace Ranger.Services.Operations.Messages.Operations
         public string LastName { get; }
         public string Role { get; }
         public string CommandingUserEmail { get; }
-        public IEnumerable<string> AuthorizedProjects { get; }
+        public IEnumerable<Guid> AuthorizedProjects { get; }
 
-        public CreateUserSagaInitializer(string domain, string email, string firstName, string lastName, string role, string commandingUserEmail, IEnumerable<string> authorizedProjects)
+        public CreateUserSagaInitializer(string domain, string email, string firstName, string lastName, string role, string commandingUserEmail, IEnumerable<Guid> authorizedProjects)
         {
             if (string.IsNullOrEmpty(domain))
             {
@@ -51,7 +52,7 @@ namespace Ranger.Services.Operations.Messages.Operations
             this.LastName = lastName;
             this.Role = role;
             this.CommandingUserEmail = commandingUserEmail;
-            this.AuthorizedProjects = authorizedProjects ?? new List<string>();
+            this.AuthorizedProjects = authorizedProjects ?? new List<Guid>();
         }
     }
 }

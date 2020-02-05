@@ -1,3 +1,4 @@
+using System;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 
@@ -11,9 +12,9 @@ namespace Ranger.Services.Operations
         public string Domain { get; }
         public string UserEmail { get; }
         public OperationsStateEnum State { get; }
-        public string ResourceId { get; }
+        public Guid ResourceId { get; }
 
-        public SendPusherDomainUserCustomNotification(string eventName, string message, string domain, string userEmail, OperationsStateEnum state, string resourceId = "")
+        public SendPusherDomainUserCustomNotification(string eventName, string message, string domain, string userEmail, OperationsStateEnum state, Guid resourceId = default(Guid))
         {
             this.EventName = eventName;
             this.Message = message;

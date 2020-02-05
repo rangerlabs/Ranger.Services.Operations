@@ -187,6 +187,6 @@ namespace Ranger.Services.Operations
         public string UserEmail { get; set; }
         public string Token { get; set; }
         public RolesEnum NewRole { get; set; }
-        public IEnumerable<string> NewAuthorizedProjects { get; set; }
+        public IEnumerable<Guid> NewAuthorizedProjects { get; set; }
     }
 }

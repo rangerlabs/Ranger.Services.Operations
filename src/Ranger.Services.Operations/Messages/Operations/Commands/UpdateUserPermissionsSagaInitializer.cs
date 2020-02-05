@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Ranger.RabbitMQ;
 
@@ -9,9 +10,9 @@ namespace Ranger.Services.Operations.Messages.Operations
         public string Email { get; }
         public string CommandingUserEmail { get; }
         public string Role { get; }
-        public IEnumerable<string> AuthorizedProjects { get; }
+        public IEnumerable<Guid> AuthorizedProjects { get; }
 
-        public UpdateUserPermissionsSagaInitializer(string domain, string email, string commandingUserEmail, string role = "", IEnumerable<string> authorizedProjects = null)
+        public UpdateUserPermissionsSagaInitializer(string domain, string email, string commandingUserEmail, string role = "", IEnumerable<Guid> authorizedProjects = null)
         {
             if (string.IsNullOrWhiteSpace(domain))
             {

@@ -12,9 +12,9 @@ namespace Ranger.Services.Operations.Messages.Projects
         public string Email { get; }
         public string CommandingUserEmail { get; }
         public string UserId { get; }
-        public readonly IEnumerable<string> ProjectIds;
+        public readonly IEnumerable<Guid> ProjectIds;
 
-        public UpdateUserProjects(string domain, IEnumerable<string> projectIds, string userId, string email, string commandingUserEmail)
+        public UpdateUserProjects(string domain, IEnumerable<Guid> projectIds, string userId, string email, string commandingUserEmail)
         {
             if (string.IsNullOrWhiteSpace(domain))
             {

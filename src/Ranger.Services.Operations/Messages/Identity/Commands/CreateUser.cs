@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Ranger.RabbitMQ;
 
@@ -12,9 +13,9 @@ namespace Ranger.Services.Operations
         public string LastName { get; }
         public string Role { get; }
         public string CommandingUserEmail { get; }
-        public IEnumerable<string> PermittedProjectIds { get; }
+        public IEnumerable<Guid> PermittedProjectIds { get; }
 
-        public CreateUser(string domain, string email, string firstName, string lastName, string role, string commandingUserEmail, IEnumerable<string> permittedProjectIds)
+        public CreateUser(string domain, string email, string firstName, string lastName, string role, string commandingUserEmail, IEnumerable<Guid> permittedProjectIds)
         {
             if (string.IsNullOrEmpty(domain))
             {
@@ -52,7 +53,7 @@ namespace Ranger.Services.Operations
             this.LastName = lastName;
             this.Role = role;
             this.CommandingUserEmail = commandingUserEmail;
-            this.PermittedProjectIds = permittedProjectIds ?? new List<string>();
+            this.PermittedProjectIds = permittedProjectIds ?? new List<Guid>();
         }
     }
 }
