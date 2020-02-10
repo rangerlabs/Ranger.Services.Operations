@@ -9,7 +9,7 @@ namespace Ranger.Services.Operations.Messages.Operations
     [MessageNamespaceAttribute("operations")]
     public class CreateGeofenceSagaInitializer : SagaInitializer, ICommand
     {
-        public CreateGeofenceSagaInitializer(bool frontendRequest, string commandingUserEmailOrTokenPrefix, string domain, string externalId, Guid projectId, GeofenceShapeEnum shape, IEnumerable<LngLat> coordinates, IEnumerable<string> labels = null, IEnumerable<string> integrationIds = null, IDictionary<string, object> metadata = null, string description = null, int radius = 0, bool enabled = true, bool onEnter = true, bool onExit = true, DateTime? expirationDate = null, DateTime? launchDate = null, Schedule schedule = null)
+        public CreateGeofenceSagaInitializer(bool frontendRequest, string commandingUserEmailOrTokenPrefix, string domain, string externalId, Guid projectId, GeofenceShapeEnum shape, IEnumerable<LngLat> coordinates, IEnumerable<string> labels = null, IEnumerable<string> integrationIds = null, IDictionary<string, string> metadata = null, string description = null, int radius = 0, bool enabled = true, bool onEnter = true, bool onExit = true, DateTime? expirationDate = null, DateTime? launchDate = null, Schedule schedule = null)
         {
             if (string.IsNullOrWhiteSpace(commandingUserEmailOrTokenPrefix))
             {
@@ -66,7 +66,7 @@ namespace Ranger.Services.Operations.Messages.Operations
         public IEnumerable<string> IntegrationIds { get; }
         public IEnumerable<LngLat> Coordinates { get; }
         public int Radius { get; }
-        public IDictionary<string, object> Metadata { get; }
+        public IDictionary<string, string> Metadata { get; }
         public GeofenceShapeEnum Shape { get; }
         public DateTime ExpirationDate { get; }
         public DateTime LaunchDate { get; }
