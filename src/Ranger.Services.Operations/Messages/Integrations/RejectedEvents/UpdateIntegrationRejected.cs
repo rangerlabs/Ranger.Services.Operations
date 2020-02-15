@@ -1,14 +1,14 @@
 using Ranger.RabbitMQ;
 
-namespace Ranger.Services.Operations.Messages.Integrations.RejectedEvents
+namespace Ranger.Services.Operations.Messages.Integrations
 {
     [MessageNamespaceAttribute("integrations")]
-    public class CreateIntegrationRejected : IRejectedEvent
+    public class UpdateIntegrationRejected : IRejectedEvent
     {
         public string Reason { get; }
         public string Code { get; }
 
-        public CreateIntegrationRejected(string reason, string code)
+        public UpdateIntegrationRejected(string reason, string code)
         {
             this.Reason = reason;
             this.Code = code;

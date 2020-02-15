@@ -1,16 +1,14 @@
-using System;
 using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations.Messages.Integrations
 {
     [MessageNamespaceAttribute("integrations")]
-    public class IntegrationCreated : IEvent
+    public class IntegrationDeleted : IEvent
     {
         public string Domain { get; }
         public string Name { get; }
-        public Guid Id { get; }
 
-        public IntegrationCreated(string domain, string name, Guid id)
+        public IntegrationDeleted(string domain, string name)
         {
             if (string.IsNullOrWhiteSpace(domain))
             {
@@ -23,7 +21,6 @@ namespace Ranger.Services.Operations.Messages.Integrations
 
             this.Domain = domain;
             this.Name = name;
-            this.Id = id;
         }
     }
 }
