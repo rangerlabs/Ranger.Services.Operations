@@ -10,7 +10,8 @@ using Ranger.Services.Operations.Messages.Identity.Commands;
 namespace Ranger.Services.Operations.Sagas
 {
     public class TransferPrimaryOwnershipSaga : BaseSaga<TransferPrimaryOwnershipSaga, TransferPrimaryOwnershipData>,
-        ISagaStartAction<TransferPrimaryOwnershipSagaInitializer>
+        ISagaStartAction<TransferPrimaryOwnershipSagaInitializer>,
+        ISagaAction<PrimaryOwnershipTransfered>
     {
         const string EVENT_NAME = "transfer-primary-ownership";
         private readonly IBusPublisher busPublisher;
@@ -32,11 +33,23 @@ namespace Ranger.Services.Operations.Sagas
             await Task.Run(() => this.busPublisher.Send(new TransferPrimaryOwnership(message.CommandingUserEmail, message.TransferUserEmail, message.Domain), CorrelationContext.FromId(Guid.Parse(context.SagaId))));
         }
 
+        public async Task CompensateAsync(PrimaryOwnershipTransfered message, ISagaContext context)
+        {
+            await Task.Run(() =>
+               logger.LogInformation("Calling compensate for PrimaryOwnershipTransfered.")
+            );
+        }
+
         public async Task HandleAsync(TransferPrimaryOwnershipSagaInitializer message, ISagaContext context)
         {
             await Task.Run(() =>
                logger.LogInformation("Calling compensate for TransferPrimaryOwnershipSagaInitializer.")
             );
+        }
+
+        public async Task HandleAsync(PrimaryOwnershipTransfered message, ISagaContext context)
+        {
+
         }
     }
 

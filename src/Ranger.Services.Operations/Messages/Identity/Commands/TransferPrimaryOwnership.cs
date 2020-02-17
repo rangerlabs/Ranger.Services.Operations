@@ -2,7 +2,7 @@ using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations.Messages.Identity.Commands
 {
-    [MessageNamespace("operations")]
+    [MessageNamespace("identity")]
     public class TransferPrimaryOwnership : ICommand
     {
         public TransferPrimaryOwnership(string commandingUserEmail,
