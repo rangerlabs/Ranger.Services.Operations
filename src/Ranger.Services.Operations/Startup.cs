@@ -64,6 +64,10 @@ namespace Ranger.Services.Operations
             {
                 return new TenantsClient("http://tenants:8082", loggerFactory.CreateLogger<TenantsClient>());
             });
+            services.AddSingleton<IIdentityClient, IdentityClient>(provider =>
+            {
+                return new IdentityClient("http://identity:5000", loggerFactory.CreateLogger<IdentityClient>());
+            });
 
             services.AddEntityFrameworkNpgsql().AddDbContext<OperationsDbContext>(options =>
             {
