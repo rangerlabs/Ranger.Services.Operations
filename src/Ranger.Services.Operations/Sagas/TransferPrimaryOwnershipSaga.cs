@@ -19,6 +19,7 @@ namespace Ranger.Services.Operations.Sagas
         ISagaAction<PrimaryOwnershipTransferAccepted>,
         ISagaAction<PrimaryOwnershipTransferRefused>,
         ISagaAction<PrimaryOwnershipTransfered>
+    // ISagaAction<TransferPrimaryOwnershipRejected>
     {
         const string FORMER_OWNER_EVENT_NAME = "transfer-ownership-former-primary-owner";
         const string NEW_OWNER_EVENT_NAME = "transfer-ownership-new-primary-owner";
@@ -37,12 +38,9 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task CompensateAsync(TransferPrimaryOwnershipSagaInitializer message, ISagaContext context)
         {
-            await SetUserDataProperties(message);
-            Data.DatabaseUsername = (await tenantsClient.GetTenantAsync<ContextTenant>(message.Domain)).DatabaseUsername;
-            Data.Domain = message.Domain;
-            Data.Initiator = message.CommandingUserEmail;
-            Data.TransferUserEmail = message.TransferUserEmail;
-            await Task.Run(() => this.busPublisher.Send(new GeneratePrimaryOwnershipTransferToken(message.CommandingUserEmail, message.Domain), CorrelationContext.FromId(Guid.Parse(context.SagaId))));
+            await Task.Run(() =>
+             logger.LogInformation("Calling compensate for TransferPrimaryOwnershipSagaInitializer.")
+          );
         }
 
         private async Task SetUserDataProperties(TransferPrimaryOwnershipSagaInitializer message)
@@ -91,7 +89,7 @@ namespace Ranger.Services.Operations.Sagas
             Data.Domain = message.Domain;
             Data.Initiator = message.CommandingUserEmail;
             Data.TransferUserEmail = message.TransferUserEmail;
-            await Task.Run(() => this.busPublisher.Send(new GeneratePrimaryOwnershipTransferToken(message.CommandingUserEmail, message.Domain), CorrelationContext.FromId(Guid.Parse(context.SagaId))));
+            await Task.Run(() => this.busPublisher.Send(new GeneratePrimaryOwnershipTransferToken(message.TransferUserEmail, message.Domain), CorrelationContext.FromId(Guid.Parse(context.SagaId))));
         }
 
         public async Task HandleAsync(PrimaryOwnershipTransfered message, ISagaContext context)
