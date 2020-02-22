@@ -9,17 +9,24 @@ using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Identity.Commands;
 using Ranger.Services.Operations.Messages.Notifications;
+using Ranger.Services.Operations.Messages.Operations.Commands;
+using Ranger.Services.Operations.Messages.Tenants.Commands;
+using Ranger.Services.Operations.Messages.Tenants.Events;
+using Ranger.Services.Operations.Messages.Tenants.RejectedEvents;
 
 namespace Ranger.Services.Operations.Sagas
 {
     public class TransferPrimaryOwnershipSaga : BaseSaga<TransferPrimaryOwnershipSaga, TransferPrimaryOwnershipData>,
         ISagaStartAction<TransferPrimaryOwnershipSagaInitializer>,
+        ISagaAction<PrimaryOwnerTransferInitiated>,
+        ISagaAction<InitiatePrimaryOwnerTransferRejected>,
         ISagaAction<PrimaryOwnershipTransferTokenGenerated>,
         ISagaAction<GeneratePrimaryOwnershipTransferTokenRejected>,
         ISagaAction<PrimaryOwnershipTransferAccepted>,
         ISagaAction<PrimaryOwnershipTransferRefused>,
-        ISagaAction<PrimaryOwnershipTransfered>
-    // ISagaAction<TransferPrimaryOwnershipRejected>
+        ISagaAction<PrimaryOwnershipTransfered>,
+        ISagaAction<TransferPrimaryOwnershipRejected>,
+        ISagaAction<CancelPrimaryOwnershipTransfer>
     {
         const string FORMER_OWNER_EVENT_NAME = "transfer-ownership-former-primary-owner";
         const string NEW_OWNER_EVENT_NAME = "transfer-ownership-new-primary-owner";
@@ -36,11 +43,11 @@ namespace Ranger.Services.Operations.Sagas
             this.logger = logger;
         }
 
-        public async Task CompensateAsync(TransferPrimaryOwnershipSagaInitializer message, ISagaContext context)
+        public Task CompensateAsync(TransferPrimaryOwnershipSagaInitializer message, ISagaContext context)
         {
-            await Task.Run(() =>
-             logger.LogInformation("Calling compensate for TransferPrimaryOwnershipSagaInitializer.")
-          );
+            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, "An error ocurred transfering the primary owner role.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
         private async Task SetUserDataProperties(TransferPrimaryOwnershipSagaInitializer message)
@@ -75,11 +82,78 @@ namespace Ranger.Services.Operations.Sagas
             }
         }
 
-        public async Task CompensateAsync(PrimaryOwnershipTransfered message, ISagaContext context)
+        public Task CompensateAsync(PrimaryOwnershipTransfered message, ISagaContext context)
         {
-            await Task.Run(() =>
-               logger.LogInformation("Calling compensate for PrimaryOwnershipTransfered.")
-            );
+            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(PrimaryOwnerTransferInitiated message, ISagaContext context)
+        {
+            this.busPublisher.Send(new GeneratePrimaryOwnershipTransferToken(Data.TransferUserEmail, Data.Domain), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(PrimaryOwnershipTransfered message, ISagaContext context)
+        {
+            this.busPublisher.Send(new CompletePrimaryOwnerTransfer(Data.Domain, Data.Initiator, PrimaryOwnerTransferStateEnum.Accepted), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPrimaryOwnerTransferAcceptedEmails(Data.TransferUserEmail, Data.OwnerUser.Email, Data.TransferUser.FirstName, Data.OwnerUser.FirstName, Data.OwnerUser.LastName, Data.Domain, Data.OrganizationName), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(NEW_OWNER_EVENT_NAME, "The Primary Owner role was transfered successfully. Logout and log back in to receive your new permissions.", Data.Domain, Data.TransferUserEmail, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserPredefinedNotification("ForceSignoutNotification", Data.Domain, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, "The Primary Owner role was transfered successfully.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            Complete();
+            return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(PrimaryOwnershipTransferTokenGenerated message, ISagaContext context)
+        {
+            var organizationNameModel = await tenantsClient.GetTenantAsync<TenantOrganizationNameModel>(Data.Domain).ConfigureAwait(false);
+            Data.OrganizationName = organizationNameModel.OrganizationName;
+            busPublisher.Send(new SendPrimaryOwnerTransferEmails(Data.TransferUserEmail, Data.OwnerUser.Email, Data.TransferUser.FirstName, Data.OwnerUser.FirstName, Data.OwnerUser.LastName, Data.Domain, organizationNameModel.OrganizationName, message.Token, context.SagaId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+        }
+
+        public Task CompensateAsync(PrimaryOwnershipTransferTokenGenerated message, ISagaContext context)
+        {
+            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(GeneratePrimaryOwnershipTransferTokenRejected message, ISagaContext context)
+        {
+            await RejectAsync();
+        }
+
+        public Task CompensateAsync(GeneratePrimaryOwnershipTransferTokenRejected message, ISagaContext context)
+        {
+            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(PrimaryOwnershipTransferAccepted message, ISagaContext context)
+        {
+            busPublisher.Send(new TransferPrimaryOwnership(Data.Initiator, Data.TransferUserEmail, Data.Domain, message.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
+        }
+
+        public Task CompensateAsync(PrimaryOwnershipTransferAccepted message, ISagaContext context)
+        {
+            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(PrimaryOwnershipTransferRefused message, ISagaContext context)
+        {
+            busPublisher.Send(new CompletePrimaryOwnerTransfer(Data.Domain, Data.Initiator, PrimaryOwnerTransferStateEnum.Refused), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPrimaryOwnerTransferRefusedEmails(Data.TransferUserEmail, Data.OwnerUser.Email, Data.TransferUser.FirstName, Data.OwnerUser.FirstName, Data.OwnerUser.LastName, Data.Domain, Data.OrganizationName), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, "The Primary Owner role was refused by the recipient.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            Complete();
+            return Task.CompletedTask;
+        }
+
+        public Task CompensateAsync(PrimaryOwnershipTransferRefused message, ISagaContext context)
+        {
+            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(TransferPrimaryOwnershipSagaInitializer message, ISagaContext context)
@@ -89,68 +163,54 @@ namespace Ranger.Services.Operations.Sagas
             Data.Domain = message.Domain;
             Data.Initiator = message.CommandingUserEmail;
             Data.TransferUserEmail = message.TransferUserEmail;
-            await Task.Run(() => this.busPublisher.Send(new GeneratePrimaryOwnershipTransferToken(message.TransferUserEmail, message.Domain), CorrelationContext.FromId(Guid.Parse(context.SagaId))));
+            busPublisher.Send(new InitiatePrimaryOwnerTransfer(message.Domain, message.CommandingUserEmail, message.TransferUserEmail), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
-        public async Task HandleAsync(PrimaryOwnershipTransfered message, ISagaContext context)
+        public Task CompensateAsync(PrimaryOwnerTransferInitiated message, ISagaContext context)
         {
-            await Task.Run(() =>
-            {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification(NEW_OWNER_EVENT_NAME, "The Primary Owner role was transfered successfully. Logout and log back in to receive your new permissions.", Data.Domain, Data.TransferUserEmail, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                busPublisher.Send(new SendPusherDomainUserPredefinedNotification("ForceSignoutNotification", Data.Domain, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, "The Primary Owner role was transfered successfully.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
-            await CompleteAsync();
+            busPublisher.Send(new CompletePrimaryOwnerTransfer(Data.Domain, "System", PrimaryOwnerTransferStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(PrimaryOwnershipTransferTokenGenerated message, ISagaContext context)
+        public Task HandleAsync(InitiatePrimaryOwnerTransferRejected message, ISagaContext context)
         {
-            var organizationNameModel = await tenantsClient.GetTenantAsync<TenantOrganizationNameModel>(Data.Domain).ConfigureAwait(false);
-            await Task.Run(() => busPublisher.Send(new SendPrimaryOwnerTransferEmails(Data.TransferUserEmail, Data.OwnerUser.Email, Data.TransferUser.FirstName, Data.OwnerUser.FirstName, Data.OwnerUser.LastName, Data.Domain, organizationNameModel.OrganizationName, message.Token, context.SagaId), CorrelationContext.FromId(Guid.Parse(context.SagaId))));
+            Reject();
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, $"An error occured transfering the Primary Owner role: {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(PrimaryOwnershipTransferTokenGenerated message, ISagaContext context)
+        public Task CompensateAsync(InitiatePrimaryOwnerTransferRejected message, ISagaContext context)
         {
-            await Task.Run(() =>
-               logger.LogInformation("Calling compensate for TransferPrimaryOwnershipSagaInitializer.")
-            );
+            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(GeneratePrimaryOwnershipTransferTokenRejected message, ISagaContext context)
+        public Task HandleAsync(TransferPrimaryOwnershipRejected message, ISagaContext context)
         {
-            await RejectAsync();
+            Reject();
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, $"An error occured transfering the Primary Owner role: {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(GeneratePrimaryOwnershipTransferTokenRejected message, ISagaContext context)
+        public Task CompensateAsync(TransferPrimaryOwnershipRejected message, ISagaContext context)
         {
-            await Task.Run(() =>
-                logger.LogInformation("Calling compensate for GeneratePrimaryOwnershipTransferTokenRejected.")
-            );
+            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(PrimaryOwnershipTransferAccepted message, ISagaContext context)
+        public Task HandleAsync(CancelPrimaryOwnershipTransfer message, ISagaContext context)
         {
-            await Task.Run(() => busPublisher.Send(new TransferPrimaryOwnership(Data.Initiator, Data.TransferUserEmail, Data.Domain, message.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId))));
+            busPublisher.Send(new SendPrimaryOwnerTransferCancelledEmails(Data.TransferUserEmail, Data.OwnerUser.Email, Data.TransferUser.FirstName, Data.OwnerUser.FirstName, Data.OwnerUser.LastName, Data.Domain, Data.OrganizationName), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, "The Primary Owner role transfer was cancelled.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new CompletePrimaryOwnerTransfer(Data.Domain, message.CommandingUserEmail, PrimaryOwnerTransferStateEnum.Cancelled), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            Complete();
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(PrimaryOwnershipTransferAccepted message, ISagaContext context)
+        public Task CompensateAsync(CancelPrimaryOwnershipTransfer message, ISagaContext context)
         {
-            await Task.Run(() =>
-                logger.LogInformation("Calling compensate for PrimaryOwnershipTransferAccepted.")
-            );
-        }
-
-        public async Task HandleAsync(PrimaryOwnershipTransferRefused message, ISagaContext context)
-        {
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, "The Primary Owner role was rejected by the recipient.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            await CompleteAsync();
-        }
-
-        public async Task CompensateAsync(PrimaryOwnershipTransferRefused message, ISagaContext context)
-        {
-            await Task.Run(() =>
-                logger.LogInformation("Calling compensate for PrimaryOwnershipTransferRefused.")
-            );
+            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            return Task.CompletedTask;
         }
     }
 
@@ -158,6 +218,7 @@ namespace Ranger.Services.Operations.Sagas
     {
         public User TransferUser { get; set; }
         public User OwnerUser { get; set; }
+        public string OrganizationName { get; set; }
         public string TransferUserEmail { get; set; }
     }
 }
