@@ -9,6 +9,7 @@ using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Identity;
 using Ranger.Services.Operations.Messages.Notifications;
 using Ranger.Services.Operations.Messages.Tenants;
+using Ranger.Services.Operations.Messages.Tenants.Commands;
 
 namespace Ranger.Services.Operations
 {
@@ -66,7 +67,7 @@ namespace Ranger.Services.Operations
             await Task.CompletedTask;
             await Task.Run(() =>
                this.busPublisher.Send(
-                   new DeleteTenant(Data.Domain),
+                   new DeleteTenant("System", Data.Domain),
                    CorrelationContext.FromId(Guid.Parse(context.SagaId))
                )
             );

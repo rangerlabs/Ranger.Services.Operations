@@ -5,6 +5,7 @@ namespace Ranger.Services.Operations.Messages.Notifications
     [MessageNamespaceAttribute("notifications")]
     public class SendPrimaryOwnerTransferEmailsSent : IEvent
     {
-        public SendPrimaryOwnerTransferEmailsSent() { }
+        public SendPrimaryOwnerTransferEmailsSent()
+        { }
     }
 }

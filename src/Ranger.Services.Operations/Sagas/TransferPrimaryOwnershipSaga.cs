@@ -159,7 +159,7 @@ namespace Ranger.Services.Operations.Sagas
         public async Task HandleAsync(TransferPrimaryOwnershipSagaInitializer message, ISagaContext context)
         {
             await SetUserDataProperties(message);
-            Data.DatabaseUsername = (await tenantsClient.GetTenantAsync<ContextTenant>(message.Domain)).DatabaseUsername;
+            Data.DatabaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
             Data.Domain = message.Domain;
             Data.Initiator = message.CommandingUserEmail;
             Data.TransferUserEmail = message.TransferUserEmail;
