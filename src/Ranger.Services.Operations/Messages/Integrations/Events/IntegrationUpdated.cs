@@ -4,13 +4,13 @@ using Ranger.RabbitMQ;
 namespace Ranger.Services.Operations.Messages.Integrations
 {
     [MessageNamespaceAttribute("integrations")]
-    public class IntegrationCreated : IEvent
+    public class IntegrationUpdated : IEvent
     {
         public string Domain { get; }
         public string Name { get; }
         public Guid Id { get; }
 
-        public IntegrationCreated(string domain, string name, Guid id)
+        public IntegrationUpdated(string domain, string name, Guid id)
         {
             if (string.IsNullOrWhiteSpace(domain))
             {

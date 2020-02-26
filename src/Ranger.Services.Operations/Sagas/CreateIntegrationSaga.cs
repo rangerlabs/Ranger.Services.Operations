@@ -5,9 +5,8 @@ using Microsoft.Extensions.Logging;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
+using Ranger.Services.Operations.Messages.Integrations;
 using Ranger.Services.Operations.Messages.Integrations.Commands;
-using Ranger.Services.Operations.Messages.Integrations.Events;
-using Ranger.Services.Operations.Messages.Integrations.RejectedEvents;
 using Ranger.Services.Operations.Messages.Operations;
 
 namespace Ranger.Services.Operations
