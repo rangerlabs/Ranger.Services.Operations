@@ -18,7 +18,7 @@ namespace Ranger.Services.Operations.Messages.Operations
             GeofenceShapeEnum shape,
             IEnumerable<LngLat> coordinates,
             IEnumerable<string> labels = null,
-            IEnumerable<string> integrationIds = null,
+            IEnumerable<Guid> integrationIds = null,
             IEnumerable<KeyValuePair<string, string>> metadata = null,
             string description = null,
             int radius = 0,
@@ -62,12 +62,12 @@ namespace Ranger.Services.Operations.Messages.Operations
             this.Id = id;
             this.ExternalId = externalId;
             this.ProjectId = projectId;
-            this.Labels = labels ?? new List<string>();
-            this.IntegrationIds = integrationIds ?? new List<string>();
-            this.Metadata = metadata ?? new List<KeyValuePair<string, string>>();
-            this.Description = string.IsNullOrWhiteSpace(description) ? "" : description;
-            this.ExpirationDate = expirationDate ?? DateTime.MaxValue;
-            this.LaunchDate = launchDate ?? DateTime.UtcNow;
+            this.Labels = labels;
+            this.IntegrationIds = integrationIds;
+            this.Metadata = metadata;
+            this.Description = description;
+            this.ExpirationDate = expirationDate;
+            this.LaunchDate = launchDate;
             this.Schedule = schedule;
             this.Enabled = enabled;
             this.OnEnter = onEnter;
@@ -83,13 +83,13 @@ namespace Ranger.Services.Operations.Messages.Operations
         public bool OnExit { get; } = true;
         public bool Enabled { get; } = true;
         public string Description { get; }
-        public IEnumerable<string> IntegrationIds { get; }
+        public IEnumerable<Guid> IntegrationIds { get; }
         public IEnumerable<LngLat> Coordinates { get; }
         public int Radius { get; }
         public IEnumerable<KeyValuePair<string, string>> Metadata { get; }
         public GeofenceShapeEnum Shape { get; }
-        public DateTime ExpirationDate { get; }
-        public DateTime LaunchDate { get; }
+        public DateTime? ExpirationDate { get; }
+        public DateTime? LaunchDate { get; }
         public Schedule Schedule { get; }
     }
 }
