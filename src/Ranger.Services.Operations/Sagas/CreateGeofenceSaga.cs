@@ -67,6 +67,7 @@ namespace Ranger.Services.Operations
                 message.Radius,
                 message.Enabled,
                 message.OnEnter,
+                message.OnDwell,
                 message.OnExit,
                 message.ExpirationDate,
                 message.LaunchDate,

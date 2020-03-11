@@ -24,6 +24,7 @@ namespace Ranger.Services.Operations.Messages.Operations
             int radius = 0,
             bool enabled = true,
             bool onEnter = true,
+            bool onDwell = true,
             bool onExit = true,
             DateTime? expirationDate = null,
             DateTime? launchDate = null,
@@ -71,6 +72,7 @@ namespace Ranger.Services.Operations.Messages.Operations
             this.Schedule = schedule;
             this.Enabled = enabled;
             this.OnEnter = onEnter;
+            this.OnDwell = onDwell;
             this.OnExit = onExit;
         }
         public bool FrontendRequest { get; }
@@ -80,6 +82,7 @@ namespace Ranger.Services.Operations.Messages.Operations
         public Guid ProjectId { get; }
         public IEnumerable<string> Labels { get; }
         public bool OnEnter { get; } = true;
+        public bool OnDwell { get; } = true;
         public bool OnExit { get; } = true;
         public bool Enabled { get; } = true;
         public string Description { get; }
