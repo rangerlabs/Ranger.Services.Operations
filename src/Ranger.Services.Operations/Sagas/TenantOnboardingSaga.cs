@@ -20,9 +20,11 @@ namespace Ranger.Services.Operations
         ISagaAction<Messages.Identity.TenantInitialized>,
         ISagaAction<Messages.Projects.TenantInitialized>,
         ISagaAction<Messages.Integrations.TenantInitialized>,
+        ISagaAction<Messages.Breadcrumbs.TenantInitialized>,
         ISagaAction<Messages.Identity.InitializeTenantRejected>,
         ISagaAction<Messages.Projects.InitializeTenantRejected>,
         ISagaAction<Messages.Integrations.InitializeTenantRejected>,
+        ISagaAction<Messages.Breadcrumbs.InitializeTenantRejected>,
         ISagaAction<NewPrimaryOwnerCreated>,
         ISagaAction<SendNewPrimaryOwnerEmailSent>
     {
@@ -62,6 +64,7 @@ namespace Ranger.Services.Operations
             {
                 this.busPublisher.Send(new Messages.Identity.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 this.busPublisher.Send(new Messages.Projects.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Breadcrumbs.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 this.busPublisher.Send(new Messages.Integrations.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
             await Task.CompletedTask;
@@ -139,6 +142,17 @@ namespace Ranger.Services.Operations
             await Task.CompletedTask;
         }
 
+        public async Task HandleAsync(Messages.Breadcrumbs.InitializeTenantRejected message, ISagaContext context)
+        {
+            await RejectAsync();
+        }
+
+        public async Task CompensateAsync(Messages.Breadcrumbs.InitializeTenantRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            await Task.CompletedTask;
+        }
+
         public async Task HandleAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
         {
             await RejectAsync();
@@ -154,11 +168,25 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                this.busPublisher.Send(new Messages.Integrations.InitializeTenant(Data.DatabaseUsername, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Breadcrumbs.InitializeTenant(Data.DatabaseUsername, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
         public async Task CompensateAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            await Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(Messages.Breadcrumbs.TenantInitialized message, ISagaContext context)
+        {
+            await Task.Run(() =>
+            {
+                this.busPublisher.Send(new Messages.Integrations.InitializeTenant(Data.DatabaseUsername, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            });
+        }
+
+        public async Task CompensateAsync(Messages.Breadcrumbs.TenantInitialized message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             await Task.CompletedTask;
