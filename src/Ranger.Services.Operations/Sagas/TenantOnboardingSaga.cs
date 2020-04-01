@@ -8,6 +8,7 @@ using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Identity;
 using Ranger.Services.Operations.Messages.Notifications;
+using Ranger.Services.Operations.Messages.Subscriptions;
 using Ranger.Services.Operations.Messages.Tenants;
 using Ranger.Services.Operations.Messages.Tenants.Commands;
 
@@ -26,6 +27,7 @@ namespace Ranger.Services.Operations
         ISagaAction<Messages.Integrations.InitializeTenantRejected>,
         ISagaAction<Messages.Breadcrumbs.InitializeTenantRejected>,
         ISagaAction<NewPrimaryOwnerCreated>,
+        ISagaAction<Messages.Subscriptions.NewTenantSubscriptionCreated>,
         ISagaAction<SendNewPrimaryOwnerEmailSent>
     {
         private readonly IBusPublisher busPublisher;
@@ -67,7 +69,6 @@ namespace Ranger.Services.Operations
                 this.busPublisher.Send(new Messages.Breadcrumbs.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 this.busPublisher.Send(new Messages.Integrations.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
-            await Task.CompletedTask;
             await Task.Run(() =>
                this.busPublisher.Send(
                    new DeleteTenant("System", Data.Domain),
@@ -83,10 +84,10 @@ namespace Ranger.Services.Operations
             );
         }
 
-        public async Task CompensateAsync(Messages.Identity.TenantInitialized message, ISagaContext context)
+        public Task CompensateAsync(Messages.Identity.TenantInitialized message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(Messages.Identity.InitializeTenantRejected message, ISagaContext context)
@@ -94,23 +95,37 @@ namespace Ranger.Services.Operations
             await RejectAsync();
         }
 
-        public async Task CompensateAsync(Messages.Identity.InitializeTenantRejected message, ISagaContext context)
+        public Task CompensateAsync(Messages.Identity.InitializeTenantRejected message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(NewPrimaryOwnerCreated message, ISagaContext context)
         {
             await Task.Run(() =>
             {
-                busPublisher.Send(new SendNewPrimaryOwnerEmail(Data.Initiator, Data.FirstName, Data.Domain, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new CreateNewTenantSubscription(Data.Domain, Data.Initiator, Data.FirstName, Data.LastName, Data.OrganizationName, Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
-        public async Task CompensateAsync(NewPrimaryOwnerCreated message, ISagaContext context)
+        public Task CompensateAsync(NewPrimaryOwnerCreated message, ISagaContext context)
         {
-            await Task.CompletedTask;
+            return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(NewTenantSubscriptionCreated message, ISagaContext context)
+        {
+            await Task.Run(() =>
+            {
+                busPublisher.Send(new SendNewPrimaryOwnerEmail(Data.Initiator, Data.FirstName, Data.Domain, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            });
+
+        }
+
+        public Task CompensateAsync(NewTenantSubscriptionCreated message, ISagaContext context)
+        {
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(SendNewPrimaryOwnerEmailSent message, ISagaContext context)
@@ -126,9 +141,9 @@ namespace Ranger.Services.Operations
             await CompleteAsync();
         }
 
-        public async Task CompensateAsync(SendNewPrimaryOwnerEmailSent message, ISagaContext context)
+        public Task CompensateAsync(SendNewPrimaryOwnerEmailSent message, ISagaContext context)
         {
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(Messages.Projects.InitializeTenantRejected message, ISagaContext context)
@@ -136,10 +151,10 @@ namespace Ranger.Services.Operations
             await RejectAsync();
         }
 
-        public async Task CompensateAsync(Messages.Projects.InitializeTenantRejected message, ISagaContext context)
+        public Task CompensateAsync(Messages.Projects.InitializeTenantRejected message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(Messages.Breadcrumbs.InitializeTenantRejected message, ISagaContext context)
@@ -147,10 +162,10 @@ namespace Ranger.Services.Operations
             await RejectAsync();
         }
 
-        public async Task CompensateAsync(Messages.Breadcrumbs.InitializeTenantRejected message, ISagaContext context)
+        public Task CompensateAsync(Messages.Breadcrumbs.InitializeTenantRejected message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
@@ -158,10 +173,10 @@ namespace Ranger.Services.Operations
             await RejectAsync();
         }
 
-        public async Task CompensateAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
+        public Task CompensateAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
@@ -172,10 +187,10 @@ namespace Ranger.Services.Operations
             });
         }
 
-        public async Task CompensateAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
+        public Task CompensateAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(Messages.Breadcrumbs.TenantInitialized message, ISagaContext context)
@@ -186,10 +201,10 @@ namespace Ranger.Services.Operations
             });
         }
 
-        public async Task CompensateAsync(Messages.Breadcrumbs.TenantInitialized message, ISagaContext context)
+        public Task CompensateAsync(Messages.Breadcrumbs.TenantInitialized message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
@@ -209,11 +224,12 @@ namespace Ranger.Services.Operations
             }); ;
         }
 
-        public async Task CompensateAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
+        public Task CompensateAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
+
     }
 
     public class UserData : BaseSagaData

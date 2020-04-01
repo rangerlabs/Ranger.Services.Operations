@@ -27,22 +27,22 @@ namespace Ranger.Services.Operations
             this.logger = logger;
         }
 
-        public async Task CompensateAsync(CreateIntegrationSagaInitializer message, ISagaContext context)
+        public Task CompensateAsync(CreateIntegrationSagaInitializer message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for CreateIntegrationSagaInitializer.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(IntegrationCreated message, ISagaContext context)
+        public Task CompensateAsync(IntegrationCreated message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for IntegrationCreated.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(CreateIntegrationRejected message, ISagaContext context)
+        public Task CompensateAsync(CreateIntegrationRejected message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for CreateIntegrationRejected.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(CreateIntegrationSagaInitializer message, ISagaContext context)

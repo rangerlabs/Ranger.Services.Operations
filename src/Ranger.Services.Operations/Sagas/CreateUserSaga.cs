@@ -36,44 +36,43 @@ namespace Ranger.Services.Operations
             this.busPublisher = busPublisher;
         }
 
-        public async Task CompensateAsync(UserCreated message, ISagaContext context)
+        public Task CompensateAsync(UserCreated message, ISagaContext context)
         {
-            await Task.Run(() => logger.LogError("Calling compensate for UserCreated."));
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(SendNewUserEmailSent message, ISagaContext context)
+        public Task CompensateAsync(SendNewUserEmailSent message, ISagaContext context)
         {
-            await Task.Run(() => logger.LogError("Calling compensate for SendNewUserEmailSent."));
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
         public async Task CompensateAsync(CreateUserSagaInitializer message, ISagaContext context)
         {
             await Task.Run(() =>
             {
-                logger.LogInformation("Calling compensate for CreateNewUserSagaInitializer.");
+                logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
                 busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
-        public async Task CompensateAsync(CreateUserRejected message, ISagaContext context)
+        public Task CompensateAsync(CreateUserRejected message, ISagaContext context)
         {
-            await Task.Run(() =>
-                logger.LogInformation("Calling compensate for CreateUserRejected.")
-            );
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(UpdateUserProjectsRejected message, ISagaContext context)
+        public Task CompensateAsync(UpdateUserProjectsRejected message, ISagaContext context)
         {
-            await Task.Run(() =>
-               logger.LogInformation("Calling compensate for UpdateUserProjectsRejected.")
-            );
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(UserProjectsUpdated message, ISagaContext context)
+        public Task CompensateAsync(UserProjectsUpdated message, ISagaContext context)
         {
-            await Task.Run(() =>
-               logger.LogInformation("Calling compensate for UserProjectsUpdated.")
-            );
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(UpdateUserProjectsRejected message, ISagaContext context)

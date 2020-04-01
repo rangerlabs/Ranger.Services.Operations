@@ -34,43 +34,42 @@ namespace Ranger.Services.Operations.Sagas
             this.busPublisher = busPublisher;
         }
 
-        public async Task CompensateAsync(UserRoleUpdated message, ISagaContext context)
+        public Task CompensateAsync(UserRoleUpdated message, ISagaContext context)
         {
-            await Task.Run(() => logger.LogError("Calling compensate for NewApplicationUserCreated."));
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
         public async Task CompensateAsync(UpdateUserPermissionsSagaInitializer message, ISagaContext context)
         {
             await Task.Run(() =>
             {
-                logger.LogInformation("Calling compensate for CreateNewApplicationUserSagaInitializer.");
+                logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
                 busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error updating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
-        public async Task CompensateAsync(UpdateUserRoleRejected message, ISagaContext context)
+        public Task CompensateAsync(UpdateUserRoleRejected message, ISagaContext context)
         {
-            await Task.Run(() =>
-               logger.LogInformation("Calling compensate for UpdateUserRoleRejected.")
-            );
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(UserProjectsUpdated message, ISagaContext context)
+        public Task CompensateAsync(UserProjectsUpdated message, ISagaContext context)
         {
-            await Task.Run(() =>
-               logger.LogInformation("Calling compensate for UserProjectsUpdated.")
-            );
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(UpdateUserProjectsRejected message, ISagaContext context)
+        public Task CompensateAsync(UpdateUserProjectsRejected message, ISagaContext context)
         {
-            await Task.Run(() =>
-               logger.LogInformation("Calling compensate for UpdateUserProjectsRejected.")
-            );
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(UserRoleUpdated message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             Data.UserId = message.UserId;
             Data.FirstName = message.FirstName;
             if (Data.NewRole != RolesEnum.User)
@@ -88,6 +87,7 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(UpdateUserPermissionsSagaInitializer message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
             Data.DatabaseUsername = databaseUsername;
             Data.Domain = message.Domain;
@@ -107,12 +107,14 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(UpdateUserRoleRejected message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             Data.RejectReason = message.Reason;
             await RejectAsync();
         }
 
         public async Task HandleAsync(UserProjectsUpdated message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             var notificationText = "";
             if (message.UnSuccessfullyAddedProjectIds.Count() > 0 && message.UnSuccessfullyRemovedProjectIds.Count() > 0)
             {
@@ -139,6 +141,7 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(UpdateUserProjectsRejected message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             var notificationText = "The user was added to their new role but failed to set their authorized projects. Verify the selected projects and try again.";
             busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await SendPermissionsUpdatedPusherNotification(context);

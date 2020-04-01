@@ -45,7 +45,7 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task CompensateAsync(TransferPrimaryOwnershipSagaInitializer message, ISagaContext context)
         {
-            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, "An error ocurred transfering the primary owner role.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
@@ -84,7 +84,7 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task CompensateAsync(PrimaryOwnershipTransfered message, ISagaContext context)
         {
-            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             return Task.CompletedTask;
         }
 
@@ -114,35 +114,38 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task CompensateAsync(PrimaryOwnershipTransferTokenGenerated message, ISagaContext context)
         {
-            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             return Task.CompletedTask;
         }
 
         public async Task HandleAsync(GeneratePrimaryOwnershipTransferTokenRejected message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             await RejectAsync();
         }
 
         public Task CompensateAsync(GeneratePrimaryOwnershipTransferTokenRejected message, ISagaContext context)
         {
-            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(AcceptPrimaryOwnershipTransfer message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             busPublisher.Send(new TransferPrimaryOwnership(Data.Initiator, Data.TransferUserEmail, Data.Domain, message.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(AcceptPrimaryOwnershipTransfer message, ISagaContext context)
         {
-            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(RefusePrimaryOwnershipTransfer message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             busPublisher.Send(new CompletePrimaryOwnerTransfer(Data.Domain, Data.Initiator, PrimaryOwnerTransferStateEnum.Refused), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             busPublisher.Send(new SendPrimaryOwnerTransferRefusedEmails(Data.TransferUserEmail, Data.OwnerUser.Email, Data.TransferUser.FirstName, Data.OwnerUser.FirstName, Data.OwnerUser.LastName, Data.Domain, Data.OrganizationName), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, "The Primary Owner role was refused by the recipient.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
@@ -152,12 +155,13 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task CompensateAsync(RefusePrimaryOwnershipTransfer message, ISagaContext context)
         {
-            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             return Task.CompletedTask;
         }
 
         public async Task HandleAsync(TransferPrimaryOwnershipSagaInitializer message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             await SetUserDataProperties(message);
             Data.DatabaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
             Data.Domain = message.Domain;
@@ -168,12 +172,14 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task CompensateAsync(PrimaryOwnerTransferInitiated message, ISagaContext context)
         {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             busPublisher.Send(new CompletePrimaryOwnerTransfer(Data.Domain, "System", PrimaryOwnerTransferStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(InitiatePrimaryOwnerTransferRejected message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             Reject();
             busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, $"An error occured transfering the Primary Owner role: {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
@@ -181,12 +187,13 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task CompensateAsync(InitiatePrimaryOwnerTransferRejected message, ISagaContext context)
         {
-            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(TransferPrimaryOwnershipRejected message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             Reject();
             busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, $"An error occured transfering the Primary Owner role: {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
@@ -194,12 +201,13 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task CompensateAsync(TransferPrimaryOwnershipRejected message, ISagaContext context)
         {
-            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(CancelPrimaryOwnershipTransfer message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             busPublisher.Send(new SendPrimaryOwnerTransferCancelledEmails(Data.TransferUserEmail, Data.OwnerUser.Email, Data.TransferUser.FirstName, Data.OwnerUser.FirstName, Data.OwnerUser.LastName, Data.Domain, Data.OrganizationName), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, "The Primary Owner role transfer was cancelled.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             busPublisher.Send(new CompletePrimaryOwnerTransfer(Data.Domain, Data.OwnerUser.Email, PrimaryOwnerTransferStateEnum.Cancelled), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
@@ -209,7 +217,7 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task CompensateAsync(CancelPrimaryOwnershipTransfer message, ISagaContext context)
         {
-            logger.LogInformation($"Calling compensate for {nameof(message)}.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
             return Task.CompletedTask;
         }
     }

@@ -26,26 +26,27 @@ namespace Ranger.Services.Operations
             this.logger = logger;
         }
 
-        public async Task CompensateAsync(CreateGeofenceSagaInitializer message, ISagaContext context)
+        public Task CompensateAsync(CreateGeofenceSagaInitializer message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for CreateGeofenceSagaInitializer.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(GeofenceCreated message, ISagaContext context)
+        public Task CompensateAsync(GeofenceCreated message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for GeofenceCreated.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(CreateGeofenceRejected message, ISagaContext context)
+        public Task CompensateAsync(CreateGeofenceRejected message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for CreateGeofenceRejected.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(CreateGeofenceSagaInitializer message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
             Data.DatabaseUsername = databaseUsername;
             Data.FrontendRequest = message.FrontendRequest;
@@ -79,7 +80,7 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(GeofenceCreated message, ISagaContext context)
         {
-            logger.LogInformation("Calling handle for GeofenceCreated.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             if (Data.FrontendRequest)
             {
                 busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"Geofence '{Data.ExternalId}' was successfully created.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed, message.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
@@ -93,7 +94,7 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(CreateGeofenceRejected message, ISagaContext context)
         {
-            logger.LogInformation("Calling handle for CreateGeofenceRejected.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             if (Data.FrontendRequest)
             {
                 if (!string.IsNullOrWhiteSpace(message.Reason))

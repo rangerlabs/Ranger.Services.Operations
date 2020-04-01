@@ -26,27 +26,27 @@ namespace Ranger.Services.Operations.Sagas
             this.logger = logger;
         }
 
-        public async Task CompensateAsync(DeleteIntegrationSagaInitializer message, ISagaContext context)
+        public Task CompensateAsync(DeleteIntegrationSagaInitializer message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for DeleteIntegrationSagaInitializer.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(IntegrationDeleted message, ISagaContext context)
+        public Task CompensateAsync(IntegrationDeleted message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for IntegrationDeleted.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(DeleteIntegrationRejected message, ISagaContext context)
+        public Task CompensateAsync(DeleteIntegrationRejected message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for DeleteIntegrationRejected.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(DeleteIntegrationSagaInitializer message, ISagaContext context)
         {
-
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
             Data.DatabaseUsername = databaseUsername;
             Data.Domain = message.Domain;
@@ -64,14 +64,14 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(IntegrationDeleted message, ISagaContext context)
         {
-            logger.LogInformation("Calling handle for IntegrationDeleted.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-deleted", $"Integration '{Data.Name}' was successfully deleted.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
         public async Task HandleAsync(DeleteIntegrationRejected message, ISagaContext context)
         {
-            logger.LogInformation("Calling handle for DeleteIntegrationRejected.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             if (!string.IsNullOrWhiteSpace(message.Reason))
             {
                 busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-deleted", $"An error occurred deleting integration '{Data.Name}'. {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
