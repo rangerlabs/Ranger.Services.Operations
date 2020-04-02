@@ -4,12 +4,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Messages.Notifications;
 using Ranger.Services.Operations.Messages.Operations;
 using Ranger.Services.Operations.Messages.Projects;
+using Ranger.Services.Operations.Messages.Subscriptions;
 
 namespace Ranger.Services.Operations
 {
@@ -19,7 +21,9 @@ namespace Ranger.Services.Operations
         ISagaAction<CreateUserRejected>,
         ISagaAction<SendNewUserEmailSent>,
         ISagaAction<UserProjectsUpdated>,
-        ISagaAction<UpdateUserProjectsRejected>
+        ISagaAction<ResourceCountIncremented>,
+        ISagaAction<UpdateUserProjectsRejected>,
+        ISagaAction<IncrementResourceCountRejected>
 
     {
         const string EVENT_NAME = "user-created";
@@ -27,19 +31,30 @@ namespace Ranger.Services.Operations
         private readonly ILogger<CreateUserSaga> logger;
         private readonly IProjectsClient projectsClient;
         private readonly ITenantsClient tenantsClient;
+        private readonly IIdentityClient identityClient;
 
-        public CreateUserSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<CreateUserSaga> logger) : base(tenantsClient, logger)
+        public CreateUserSaga(IBusPublisher busPublisher, IIdentityClient identityClient, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<CreateUserSaga> logger) : base(tenantsClient, logger)
         {
+            this.identityClient = identityClient;
             this.projectsClient = projectsClient;
             this.tenantsClient = tenantsClient;
             this.logger = logger;
             this.busPublisher = busPublisher;
         }
 
-        public Task CompensateAsync(UserCreated message, ISagaContext context)
+        public async Task CompensateAsync(UserCreated message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            return Task.CompletedTask;
+            try
+            {
+                var deleteUserContent = new { CommandingUserEmail = Data.Initiator };
+                await identityClient.DeleteUserAsync(Data.Domain, Data.UserEmail, JsonConvert.SerializeObject(deleteUserContent));
+            }
+            catch (HttpClientException ex)
+            {
+                logger.LogError(ex, $"Failed to remove user '{Data.UserEmail}' after a Saga failure.");
+            }
+            logger.LogDebug($"Successfully removed user '{Data.UserEmail}' after a Saga failure.");
         }
 
         public Task CompensateAsync(SendNewUserEmailSent message, ISagaContext context)
@@ -75,8 +90,21 @@ namespace Ranger.Services.Operations
             return Task.CompletedTask;
         }
 
+        public Task CompensateAsync(ResourceCountIncremented message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
+        }
+
+        public Task CompensateAsync(IncrementResourceCountRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
+        }
+
         public async Task HandleAsync(UpdateUserProjectsRejected message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             var notificationText = $"Successfully created {Data.UserEmail} but failed to set their authorized projects. Verify the selected projects and try again.";
             busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
@@ -84,6 +112,7 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(UserProjectsUpdated message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             var notificationText = "";
             if (message.UnSuccessfullyAddedProjectIds.Count() > 0)
             {
@@ -95,41 +124,29 @@ namespace Ranger.Services.Operations
             }
 
             await SendNewUserEmail(context);
-            await CompleteAsync();
         }
 
-        public async Task HandleAsync(UserCreated message, ISagaContext context)
+        public Task HandleAsync(UserCreated message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             Data.UserId = message.UserId;
             Data.FirstName = message.FirstName;
             Data.Token = message.Token;
-            if (Data.NewRole != RolesEnum.User)
-            {
-                await SendNewUserEmail(context);
-                await CompleteAsync();
-            }
-            else
-            {
-                if (Data.NewAuthorizedProjects.Count() > 0)
-                {
-                    busPublisher.Send(new UpdateUserProjects(Data.Domain, Data.NewAuthorizedProjects, message.UserId, message.Email, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                }
-                else
-                {
-                    await SendNewUserEmail(context);
-                    await CompleteAsync();
-                }
-            }
+
+            busPublisher.Send(new IncrementResourceCount(Data.Domain, ResourceEnum.Account), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(SendNewUserEmailSent message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} was succesfully created.", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
         public async Task HandleAsync(CreateUserSagaInitializer message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
             Data.DatabaseUsername = databaseUsername;
             Data.Domain = message.Domain;
@@ -152,7 +169,34 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(CreateUserRejected message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             Data.RejectReason = message.Reason;
+            await RejectAsync();
+        }
+
+        public async Task HandleAsync(ResourceCountIncremented message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            if (Data.NewRole != RolesEnum.User)
+            {
+                await SendNewUserEmail(context);
+            }
+            else
+            {
+                if (Data.NewAuthorizedProjects.Count() > 0)
+                {
+                    busPublisher.Send(new UpdateUserProjects(Data.Domain, Data.NewAuthorizedProjects, Data.UserId, Data.UserEmail, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                }
+                else
+                {
+                    await SendNewUserEmail(context);
+                }
+            }
+        }
+
+        public async Task HandleAsync(IncrementResourceCountRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             await RejectAsync();
         }
 

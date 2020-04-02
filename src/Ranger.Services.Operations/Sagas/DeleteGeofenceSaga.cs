@@ -2,18 +2,22 @@ using System;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
+using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Geofences;
 using Ranger.Services.Operations.Messages.Operations;
+using Ranger.Services.Operations.Messages.Subscriptions;
 
 namespace Ranger.Services.Operations.Sagas
 {
     public class DeleteGeofenceSaga : BaseSaga<DeleteGeofenceSaga, DeleteGeofenceData>,
         ISagaStartAction<DeleteGeofenceSagaInitializer>,
         ISagaAction<GeofenceDeleted>,
-        ISagaAction<DeleteGeofenceRejected>
+        ISagaAction<ResourceCountDecremented>,
+        ISagaAction<DeleteGeofenceRejected>,
+        ISagaAction<DecrementResourceCountRejected>
     {
         private readonly ILogger<DeleteGeofenceSaga> logger;
         private readonly IBusPublisher busPublisher;
@@ -44,6 +48,18 @@ namespace Ranger.Services.Operations.Sagas
             return Task.CompletedTask;
         }
 
+        public Task CompensateAsync(ResourceCountDecremented message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
+        }
+
+        public Task CompensateAsync(DecrementResourceCountRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            return Task.CompletedTask;
+        }
+
         public async Task HandleAsync(DeleteGeofenceSagaInitializer message, ISagaContext context)
         {
 
@@ -63,18 +79,11 @@ namespace Ranger.Services.Operations.Sagas
             busPublisher.Send(deleteGeofence, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
-        public async Task HandleAsync(GeofenceDeleted message, ISagaContext context)
+        public Task HandleAsync(GeofenceDeleted message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            if (Data.FrontendRequest)
-            {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"Geofence '{Data.ExternalId}' was successfully deleted.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                await CompleteAsync();
-            }
-            else
-            {
-                await CompleteAsync();
-            }
+            busPublisher.Send(new DecrementResourceCount(Data.Domain, ResourceEnum.Goefence), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(DeleteGeofenceRejected message, ISagaContext context)
@@ -96,6 +105,26 @@ namespace Ranger.Services.Operations.Sagas
             {
                 await RejectAsync();
             }
+        }
+
+        public async Task HandleAsync(ResourceCountDecremented message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            if (Data.FrontendRequest)
+            {
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"Geofence '{Data.ExternalId}' was successfully deleted.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                await CompleteAsync();
+            }
+            else
+            {
+                await CompleteAsync();
+            }
+        }
+
+        public Task HandleAsync(DecrementResourceCountRejected message, ISagaContext context)
+        {
+            logger.LogCritical($"Failed to decrement the Geofence utilization for tenant domain '{Data.Domain}'! Reason: {message.Reason}.");
+            return Task.CompletedTask;
         }
     }
 
