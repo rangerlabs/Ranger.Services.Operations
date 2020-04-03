@@ -32,14 +32,14 @@ namespace Ranger.Services.Operations
 
         public Task CompensateAsync(CreateGeofenceSagaInitializer message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(GeofenceCreated message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            busPublisher.Send(new DeleteGeofence("System", Data.Domain, Data.ExternalId, Data.ProjectId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new DeleteGeofence("System", Data.Domain, Data.Message.ExternalId, Data.Message.ProjectId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 
@@ -66,55 +66,39 @@ namespace Ranger.Services.Operations
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
             Data.DatabaseUsername = databaseUsername;
-            Data.FrontendRequest = message.FrontendRequest;
+            Data.Message = message;
             Data.Domain = message.Domain;
             Data.Initiator = message.CommandingUserEmailOrTokenPrefix;
-            Data.ExternalId = message.ExternalId;
-            Data.ProjectId = message.ProjectId;
-
-            var createGeofence = new CreateGeofence(
-                message.CommandingUserEmailOrTokenPrefix,
-                message.Domain,
-                message.ExternalId,
-                message.ProjectId,
-                message.Shape,
-                message.Coordinates,
-                message.Labels,
-                message.IntegrationIds,
-                message.Metadata,
-                message.Description,
-                message.Radius,
-                message.Enabled,
-                message.OnEnter,
-                message.OnDwell,
-                message.OnExit,
-                message.ExpirationDate,
-                message.LaunchDate,
-                message.Schedule
-            );
-            busPublisher.Send(createGeofence, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new IncrementResourceCount(Data.Domain, ResourceEnum.Geofence), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
-        public Task HandleAsync(GeofenceCreated message, ISagaContext context)
+        public async Task HandleAsync(GeofenceCreated message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             Data.Id = message.Id;
-            busPublisher.Send(new IncrementResourceCount(Data.Domain, ResourceEnum.Goefence), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            return Task.CompletedTask;
+            if (Data.Message.FrontendRequest)
+            {
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"Geofence '{Data.Message.ExternalId}' was successfully created.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed, Data.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                await CompleteAsync();
+            }
+            else
+            {
+                await CompleteAsync();
+            }
         }
 
         public async Task HandleAsync(CreateGeofenceRejected message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            if (Data.FrontendRequest)
+            if (Data.Message.FrontendRequest)
             {
                 if (!string.IsNullOrWhiteSpace(message.Reason))
                 {
-                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"An error occurred creating geofence '{Data.ExternalId}'. {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"An error occurred creating geofence '{Data.Message.ExternalId}'. {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 else
                 {
-                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"An error occurred creating geofence '{Data.ExternalId}'.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"An error occurred creating geofence '{Data.Message.ExternalId}'.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 await RejectAsync();
             }
@@ -124,32 +108,47 @@ namespace Ranger.Services.Operations
             }
         }
 
-        public async Task HandleAsync(ResourceCountIncremented message, ISagaContext context)
+        public Task HandleAsync(ResourceCountIncremented message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            if (Data.FrontendRequest)
-            {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"Geofence '{Data.ExternalId}' was successfully created.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed, Data.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                await CompleteAsync();
-            }
-            else
-            {
-                await CompleteAsync();
-            }
+            var createGeofence = new CreateGeofence(
+                Data.Message.CommandingUserEmailOrTokenPrefix,
+                Data.Message.Domain,
+                Data.Message.ExternalId,
+                Data.Message.ProjectId,
+                Data.Message.Shape,
+                Data.Message.Coordinates,
+                Data.Message.Labels,
+                Data.Message.IntegrationIds,
+                Data.Message.Metadata,
+                Data.Message.Description,
+                Data.Message.Radius,
+                Data.Message.Enabled,
+                Data.Message.OnEnter,
+                Data.Message.OnDwell,
+                Data.Message.OnExit,
+                Data.Message.ExpirationDate,
+                Data.Message.LaunchDate,
+                Data.Message.Schedule
+            );
+            busPublisher.Send(createGeofence, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(IncrementResourceCountRejected message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            if (Data.Message.FrontendRequest)
+            {
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"Failed to create geofence '{Data.Message.ExternalId}'. Subscription limit reached.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected, Data.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            }
             await RejectAsync();
         }
     }
 
     public class CreateGeofenceData : BaseSagaData
     {
+        public CreateGeofenceSagaInitializer Message;
         public Guid Id;
-        public Guid ProjectId;
-        public bool FrontendRequest;
-        public string ExternalId;
     }
 }

@@ -63,41 +63,41 @@ namespace Ranger.Services.Operations.Sagas
         public async Task HandleAsync(DeleteGeofenceSagaInitializer message, ISagaContext context)
         {
 
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
             Data.DatabaseUsername = databaseUsername;
-            Data.FrontendRequest = message.FrontendRequest;
+            Data.Message = message;
             Data.Domain = message.Domain;
             Data.Initiator = message.CommandingUserEmailOrTokenPrefix;
-            Data.ExternalId = message.ExternalId;
-
-            var deleteGeofence = new DeleteGeofence(
-                message.CommandingUserEmailOrTokenPrefix,
-                message.Domain,
-                message.ExternalId,
-                message.ProjectId
-            );
-            busPublisher.Send(deleteGeofence, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new DecrementResourceCount(Data.Domain, ResourceEnum.Geofence), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
-        public Task HandleAsync(GeofenceDeleted message, ISagaContext context)
+        public async Task HandleAsync(GeofenceDeleted message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            busPublisher.Send(new DecrementResourceCount(Data.Domain, ResourceEnum.Goefence), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            return Task.CompletedTask;
+            if (Data.Message.FrontendRequest)
+            {
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"Geofence '{Data.Message.ExternalId}' was successfully deleted.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                await CompleteAsync();
+            }
+            else
+            {
+                await CompleteAsync();
+            }
         }
 
         public async Task HandleAsync(DeleteGeofenceRejected message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            if (Data.FrontendRequest)
+            if (Data.Message.FrontendRequest)
             {
                 if (!string.IsNullOrWhiteSpace(message.Reason))
                 {
-                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"An error occurred deleting geofence '{Data.ExternalId}'. {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"An error occurred deleting geofence '{Data.Message.ExternalId}'. {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 else
                 {
-                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"An error occurred deleting geofence '{Data.ExternalId}'.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"An error occurred deleting geofence '{Data.Message.ExternalId}'.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 await RejectAsync();
             }
@@ -107,30 +107,29 @@ namespace Ranger.Services.Operations.Sagas
             }
         }
 
-        public async Task HandleAsync(ResourceCountDecremented message, ISagaContext context)
+        public Task HandleAsync(ResourceCountDecremented message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            if (Data.FrontendRequest)
-            {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"Geofence '{Data.ExternalId}' was successfully deleted.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                await CompleteAsync();
-            }
-            else
-            {
-                await CompleteAsync();
-            }
+            var deleteGeofence = new DeleteGeofence(
+                Data.Message.CommandingUserEmailOrTokenPrefix,
+                Data.Message.Domain,
+                Data.Message.ExternalId,
+                Data.Message.ProjectId
+            );
+            busPublisher.Send(deleteGeofence, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
         public Task HandleAsync(DecrementResourceCountRejected message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             logger.LogCritical($"Failed to decrement the Geofence utilization for tenant domain '{Data.Domain}'! Reason: {message.Reason}.");
-            return Task.CompletedTask;
+            return RejectAsync();
         }
     }
 
     public class DeleteGeofenceData : BaseSagaData
     {
-        public bool FrontendRequest;
-        public string ExternalId;
+        public DeleteGeofenceSagaInitializer Message;
     }
 }

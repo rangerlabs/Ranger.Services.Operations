@@ -40,7 +40,7 @@ namespace Ranger.Services.Operations
         public Task CompensateAsync(IntegrationCreated message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            busPublisher.Send(new DeleteIntegration("System", Data.Domain, Data.Name, Data.ProjectId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new DeleteIntegration("System", Data.Domain, Data.Name, Data.Message.ProjectId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 
@@ -67,21 +67,18 @@ namespace Ranger.Services.Operations
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
             Data.DatabaseUsername = databaseUsername;
+            Data.Message = message;
             Data.Domain = message.Domain;
             Data.Initiator = message.CommandingUserEmail;
-            Data.Name = message.Name;
-            Data.ProjectId = message.ProjectId;
-
-            var createIntegration = new CreateIntegration(message.Domain, message.CommandingUserEmail, message.ProjectId, message.MessageJsonContent, message.IntegrationType);
-            busPublisher.Send(createIntegration, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new IncrementResourceCount(Data.Domain, ResourceEnum.Integration), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
-        public Task HandleAsync(IntegrationCreated message, ISagaContext context)
+        public async Task HandleAsync(IntegrationCreated message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             Data.Id = message.Id;
-            busPublisher.Send(new IncrementResourceCount(Data.Domain, ResourceEnum.Integration), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            return Task.CompletedTask;
+            busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"Integration '{Data.Name}' was successfully created.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed, Data.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            await CompleteAsync();
         }
 
         public async Task HandleAsync(CreateIntegrationRejected message, ISagaContext context)
@@ -98,24 +95,26 @@ namespace Ranger.Services.Operations
             await RejectAsync();
         }
 
-        public async Task HandleAsync(ResourceCountIncremented message, ISagaContext context)
+        public Task HandleAsync(ResourceCountIncremented message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"Integration '{Data.Name}' was successfully created.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed, Data.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            await CompleteAsync();
+            var createIntegration = new CreateIntegration(message.Domain, Data.Message.CommandingUserEmail, Data.Message.ProjectId, Data.Message.MessageJsonContent, Data.Message.IntegrationType);
+            busPublisher.Send(createIntegration, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(IncrementResourceCountRejected message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"Failed to create integration '{Data.Name}'. Subscription limit reached.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await RejectAsync();
         }
     }
 
     public class CreateIntegrationData : BaseSagaData
     {
+        public CreateIntegrationSagaInitializer Message;
         public Guid Id;
-        public Guid ProjectId;
         public string Name;
     }
 }
