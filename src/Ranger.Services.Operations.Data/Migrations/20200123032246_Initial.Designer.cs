@@ -80,7 +80,7 @@ namespace Ranger.Services.Operations.Data.Migrations
                         .HasColumnName("data")
                         .HasColumnType("text");
 
-                    b.Property<string>("DatabaseUsername")
+                    b.Property<string>("TenantId")
                         .IsRequired()
                         .HasColumnName("database_username")
                         .HasColumnType("text");

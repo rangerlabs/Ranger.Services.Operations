@@ -46,7 +46,7 @@ namespace Ranger.Services.Operations.Data
                 throw new ArgumentNullException($"{nameof(state)} was null.");
             }
 
-            var entityFrameworkSagaState = new EntityFrameworkSagaState(state.Id, state.Type, (state.Data as BaseSagaData).DatabaseUsername, state.State, state.Data, state.Data.GetType());
+            var entityFrameworkSagaState = new EntityFrameworkSagaState(state.Id, state.Type, (state.Data as BaseSagaData).TenantId, state.State, state.Data, state.Data.GetType());
 
             var serializedSagaState = JsonConvert.SerializeObject(entityFrameworkSagaState);
             var cachedSagaState = await context.SagaStates.FirstOrDefaultAsync(ss => ss.SagaId == state.Id && ss.SagaType == state.Type.ToString());
@@ -55,7 +55,7 @@ namespace Ranger.Services.Operations.Data
                 var sagaState = new SagaState
                 {
                     SagaId = state.Id,
-                    DatabaseUsername = (state.Data as BaseSagaData).DatabaseUsername,
+                    TenantId = (state.Data as BaseSagaData).TenantId,
                     SagaType = state.Type.ToString(),
                     Data = serializedSagaState
                 };

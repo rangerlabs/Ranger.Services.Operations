@@ -12,7 +12,6 @@ namespace Ranger.Services.Operations
             {
                 throw new System.ArgumentException($"{nameof(token)} was null or whitespace.");
             }
-
             Token = token;
         }
     }

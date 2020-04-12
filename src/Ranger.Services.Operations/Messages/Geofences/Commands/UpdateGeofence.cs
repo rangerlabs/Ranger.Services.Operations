@@ -10,7 +10,7 @@ namespace Ranger.Services.Operations
     public class UpdateGeofence : ICommand
     {
         public UpdateGeofence(string commandingUserEmailOrTokenPrefix,
-            string domain,
+            string tenantId,
             Guid id,
             string externalId,
             Guid projectId,
@@ -33,9 +33,9 @@ namespace Ranger.Services.Operations
             {
                 throw new System.ArgumentException($"{nameof(commandingUserEmailOrTokenPrefix)} was null or whitespace.");
             }
-            if (string.IsNullOrWhiteSpace(domain))
+            if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new System.ArgumentException($"{nameof(domain)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(tenantId)} was null or whitespace.");
             }
             if (string.IsNullOrWhiteSpace(externalId))
             {
@@ -57,7 +57,7 @@ namespace Ranger.Services.Operations
             this.Shape = shape;
             this.Radius = radius;
 
-            this.Domain = domain;
+            this.TenantId = tenantId;
             this.Id = id;
             this.ExternalId = externalId;
             this.ProjectId = projectId;
@@ -75,7 +75,7 @@ namespace Ranger.Services.Operations
         }
 
         public string CommandingUserEmailOrTokenPrefix { get; }
-        public string Domain { get; }
+        public string TenantId { get; }
         public Guid Id { get; }
         public string ExternalId { get; }
         public Guid ProjectId { get; }

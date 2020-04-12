@@ -14,9 +14,9 @@ using Ranger.Services.Operations.Messages.Tenants.Commands;
 
 namespace Ranger.Services.Operations
 {
-    //This is the one time not to use a SagaInitializer because DatabaseUsername has not yet been assigned 
+    //This is the one time not to use a SagaInitializer because TenantId has not yet been assigned 
     //and a SagaState cannot be persisted as a result of the database constraint
-    public class TenantOnboardingSaga : BaseSaga<TenantOnboardingSaga, UserData>,
+    public class TenantOnboardingSaga : Saga<UserData>,
         ISagaStartAction<Messages.Tenants.TenantCreated>,
         ISagaAction<Messages.Identity.TenantInitialized>,
         ISagaAction<Messages.Projects.TenantInitialized>,
@@ -32,30 +32,28 @@ namespace Ranger.Services.Operations
     {
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<TenantOnboardingSaga> logger;
-        private readonly ITenantsClient tenantsClient;
 
-        public TenantOnboardingSaga(IBusPublisher busPublisher, ITenantsClient tenantsClient, ILogger<TenantOnboardingSaga> logger) : base(tenantsClient, logger)
+        public TenantOnboardingSaga(IBusPublisher busPublisher, ILogger<TenantOnboardingSaga> logger)
         {
-            this.tenantsClient = tenantsClient;
             this.busPublisher = busPublisher;
             this.logger = logger;
         }
 
         public async Task HandleAsync(TenantCreated message, ISagaContext context)
         {
-            await Task.Run(() =>
+            await Task.Run((Action)(() =>
             {
                 Data.Token = message.Token;
-                Data.Domain = message.Domain;
+                Data.TenantId = message.TenantId;
                 Data.Initiator = message.Email;
                 Data.FirstName = message.FirstName;
                 Data.LastName = message.LastName;
                 Data.Password = message.Password;
                 Data.OrganizationName = message.OrganizationName;
-                Data.DatabaseUsername = message.DatabaseUsername;
+                Data.TenantId = message.TenantId;
                 Data.DatabasePassword = message.DatabasePassword;
-                this.busPublisher.Send(new Messages.Identity.InitializeTenant(message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
+                this.busPublisher.Send(new Messages.Identity.InitializeTenant((string)message.TenantId, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            }));
         }
 
         public async Task CompensateAsync(TenantCreated message, ISagaContext context)
@@ -64,14 +62,14 @@ namespace Ranger.Services.Operations
             logger.LogDebug("Dropping tenant.");
             await Task.Run(() =>
             {
-                this.busPublisher.Send(new Messages.Identity.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                this.busPublisher.Send(new Messages.Projects.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                this.busPublisher.Send(new Messages.Breadcrumbs.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                this.busPublisher.Send(new Messages.Integrations.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Identity.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Projects.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Breadcrumbs.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Integrations.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
             await Task.Run(() =>
                this.busPublisher.Send(
-                   new DeleteTenant("System", Data.Domain),
+                   new DeleteTenant("System", Data.TenantId),
                    CorrelationContext.FromId(Guid.Parse(context.SagaId))
                )
             );
@@ -80,7 +78,7 @@ namespace Ranger.Services.Operations
         public async Task HandleAsync(Messages.Identity.TenantInitialized message, ISagaContext context)
         {
             await Task.Run(() =>
-               this.busPublisher.Send(new Messages.Projects.InitializeTenant(Data.DatabaseUsername, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)))
+               this.busPublisher.Send(new Messages.Projects.InitializeTenant(Data.TenantId, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)))
             );
         }
 
@@ -105,7 +103,7 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                busPublisher.Send(new CreateNewTenantSubscription(Data.Domain, Data.Initiator, Data.FirstName, Data.LastName, Data.OrganizationName, Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new CreateNewTenantSubscription(Data.TenantId, Data.Initiator, Data.FirstName, Data.LastName, Data.OrganizationName, Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
@@ -118,7 +116,7 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                busPublisher.Send(new SendNewPrimaryOwnerEmail(Data.Initiator, Data.FirstName, Data.Domain, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendNewPrimaryOwnerEmail(Data.Initiator, Data.FirstName, Data.TenantId, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
 
         }
@@ -133,7 +131,7 @@ namespace Ranger.Services.Operations
             busPublisher.Send<SendPusherDomainFrontendNotification>(
                 new SendPusherDomainFrontendNotification(
                     "TenantOnboarding",
-                    Data.Domain,
+                    Data.TenantId,
                     OperationsStateEnum.Completed),
                 CorrelationContext.FromId(Guid.Parse(context.SagaId)));
 
@@ -183,7 +181,7 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                this.busPublisher.Send(new Messages.Breadcrumbs.InitializeTenant(Data.DatabaseUsername, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Breadcrumbs.InitializeTenant(Data.TenantId, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
@@ -197,7 +195,7 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                this.busPublisher.Send(new Messages.Integrations.InitializeTenant(Data.DatabaseUsername, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                this.busPublisher.Send(new Messages.Integrations.InitializeTenant(Data.TenantId, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
@@ -217,7 +215,7 @@ namespace Ranger.Services.Operations
                         Data.FirstName,
                         Data.LastName,
                         Data.Password,
-                        Data.Domain
+                        Data.TenantId
                     ),
                     CorrelationContext.FromId(Guid.Parse(context.SagaId))
                 );

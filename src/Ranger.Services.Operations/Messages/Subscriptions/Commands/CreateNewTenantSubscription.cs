@@ -6,11 +6,11 @@ namespace Ranger.Services.Operations.Messages.Subscriptions
     [MessageNamespace("subscriptions")]
     public class CreateNewTenantSubscription : ICommand
     {
-        public CreateNewTenantSubscription(string domain, string commandingUserEmail, string firstName, string lastName, string organizationName, string pgsqlDatabaseUsername)
+        public CreateNewTenantSubscription(string tenantId, string commandingUserEmail, string firstName, string lastName, string organizationName, string TenantId)
         {
-            if (string.IsNullOrWhiteSpace(domain))
+            if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new System.ArgumentException($"{nameof(domain)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(tenantId)} was null or whitespace.");
             }
             if (string.IsNullOrWhiteSpace(commandingUserEmail))
             {
@@ -28,24 +28,18 @@ namespace Ranger.Services.Operations.Messages.Subscriptions
             {
                 throw new ArgumentException($"{nameof(organizationName)} was null or whitespace.");
             }
-            if (string.IsNullOrWhiteSpace(pgsqlDatabaseUsername))
-            {
-                throw new ArgumentException($"{nameof(pgsqlDatabaseUsername)} was null or whitespace.");
-            }
 
-            this.Domain = domain;
+            this.TenantId = tenantId;
             this.CommandingUserEmail = commandingUserEmail;
             this.FirstName = firstName;
             this.LastName = lastName;
             this.OrganizationName = organizationName;
-            this.PgsqlDatabaseUsername = pgsqlDatabaseUsername;
 
         }
-        public string Domain { get; }
+        public string TenantId { get; }
         public string CommandingUserEmail { get; }
         public string FirstName { get; }
         public string LastName { get; }
         public string OrganizationName { get; }
-        public string PgsqlDatabaseUsername { get; }
     }
 }

@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
+using Ranger.ApiUtilities;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
@@ -50,6 +51,9 @@ namespace Ranger.Services.Operations
                      options.SerializerSettings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
                  });
 
+            services.AddAutoWrapper();
+            services.AddSwaggerGen("Operations API", "v1");
+
             services.AddAuthorization(options =>
             {
                 options.AddPolicy("operationsApi", policyBuilder =>
@@ -58,21 +62,11 @@ namespace Ranger.Services.Operations
                 });
             });
 
+            services.AddTenantsHttpClient("http://tenants:8082", "tenantsApi", "cKprgh9wYKWcsm");
+            services.AddProjectsHttpClient("http://projects:8086", "projectsApi", "usGwT8Qsp4La2");
+            services.AddProjectsHttpClient("http://identity:5000", "IdentityServerApi", "89pCcXHuDYTXY");
 
-            services.AddSingleton<IProjectsClient, ProjectsClient>(provider =>
-            {
-                return new ProjectsClient("http://projects:8086", loggerFactory.CreateLogger<ProjectsClient>());
-            });
-            services.AddSingleton<ITenantsClient, TenantsClient>(provider =>
-            {
-                return new TenantsClient("http://tenants:8082", loggerFactory.CreateLogger<TenantsClient>());
-            });
-            services.AddSingleton<IIdentityClient, IdentityClient>(provider =>
-            {
-                return new IdentityClient("http://identity:5000", loggerFactory.CreateLogger<IdentityClient>());
-            });
-
-            services.AddEntityFrameworkNpgsql().AddDbContext<OperationsDbContext>(options =>
+            services.AddDbContext<OperationsDbContext>(options =>
             {
                 options.UseNpgsql(configuration["cloudSql:ConnectionString"]);
             },
@@ -117,6 +111,8 @@ namespace Ranger.Services.Operations
 
             applicationLifetime.ApplicationStopping.Register(OnShutdown);
 
+            app.UseSwagger("v1", "Operations API");
+            app.UseAutoWrapper();
             app.UseRouting();
             app.UseAuthentication();
             app.UseEndpoints(endpoints =>

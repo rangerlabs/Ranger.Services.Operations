@@ -11,18 +11,16 @@ using Ranger.Services.Operations.Messages.Operations;
 
 namespace Ranger.Services.Operations.Sagas
 {
-    public class UpsertIntegrationSaga : BaseSaga<UpsertIntegrationSaga, UpsertIntegrationData>,
+    public class UpsertIntegrationSaga : Saga<UpsertIntegrationData>,
         ISagaStartAction<UpdateIntegrationSagaInitializer>,
         ISagaAction<IntegrationUpdated>,
         ISagaAction<UpdateIntegrationRejected>
     {
         private readonly ILogger<UpsertIntegrationSaga> logger;
         private readonly IBusPublisher busPublisher;
-        private readonly ITenantsClient tenantsClient;
 
-        public UpsertIntegrationSaga(IBusPublisher busPublisher, ITenantsClient tenantsClient, ILogger<UpsertIntegrationSaga> logger) : base(tenantsClient, logger)
+        public UpsertIntegrationSaga(IBusPublisher busPublisher, ILogger<UpsertIntegrationSaga> logger)
         {
-            this.tenantsClient = tenantsClient;
             this.busPublisher = busPublisher;
             this.logger = logger;
         }
@@ -45,23 +43,22 @@ namespace Ranger.Services.Operations.Sagas
             return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(UpdateIntegrationSagaInitializer message, ISagaContext context)
+        public Task HandleAsync(UpdateIntegrationSagaInitializer message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
-            Data.DatabaseUsername = databaseUsername;
-            Data.Domain = message.Domain;
+            Data.TenantId = message.TenantId;
             Data.Initiator = message.CommandingUserEmail;
             Data.Name = message.Name;
 
-            var updateIntegration = new UpdateIntegration(message.Domain, message.CommandingUserEmail, message.ProjectId, message.MessageJsonContent, message.IntegrationType, message.Version);
+            var updateIntegration = new UpdateIntegration(message.TenantId, message.CommandingUserEmail, message.ProjectId, message.MessageJsonContent, message.IntegrationType, message.Version);
             busPublisher.Send(updateIntegration, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(IntegrationUpdated message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-updated", $"Integration '{Data.Name}' was successfully updated.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed, message.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-updated", $"Integration '{Data.Name}' was successfully updated.", Data.TenantId, Data.Initiator, OperationsStateEnum.Completed, message.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
 
         }
@@ -71,11 +68,11 @@ namespace Ranger.Services.Operations.Sagas
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             if (!string.IsNullOrWhiteSpace(message.Reason))
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-updated", $"An error occurred updating integration '{Data.Name}'. {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-updated", $"An error occurred updating integration '{Data.Name}'. {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             else
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-updated", $"An error occurred updating integration '{Data.Name}'.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-updated", $"An error occurred updating integration '{Data.Name}'.", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             await RejectAsync();
         }

@@ -15,7 +15,7 @@ using Ranger.Services.Operations.Messages.Subscriptions;
 
 namespace Ranger.Services.Operations
 {
-    public class CreateUserSaga : BaseSaga<CreateUserSaga, CreateUserData>,
+    public class CreateUserSaga : Saga<CreateUserData>,
         ISagaStartAction<CreateUserSagaInitializer>,
         ISagaAction<UserCreated>,
         ISagaAction<CreateUserRejected>,
@@ -29,15 +29,13 @@ namespace Ranger.Services.Operations
         const string EVENT_NAME = "user-created";
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<CreateUserSaga> logger;
-        private readonly IProjectsClient projectsClient;
-        private readonly ITenantsClient tenantsClient;
-        private readonly IIdentityClient identityClient;
+        private readonly ProjectsHttpClient projectsClient;
+        private readonly IdentityHttpClient identityClient;
 
-        public CreateUserSaga(IBusPublisher busPublisher, IIdentityClient identityClient, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<CreateUserSaga> logger) : base(tenantsClient, logger)
+        public CreateUserSaga(IBusPublisher busPublisher, IdentityHttpClient identityClient, ProjectsHttpClient projectsClient, ILogger<CreateUserSaga> logger)
         {
             this.identityClient = identityClient;
             this.projectsClient = projectsClient;
-            this.tenantsClient = tenantsClient;
             this.logger = logger;
             this.busPublisher = busPublisher;
         }
@@ -45,14 +43,11 @@ namespace Ranger.Services.Operations
         public async Task CompensateAsync(UserCreated message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            try
+            var deleteUserContent = new { CommandingUserEmail = Data.Initiator };
+            var apiResponse = await identityClient.DeleteUserAsync(Data.TenantId, Data.UserEmail, JsonConvert.SerializeObject(deleteUserContent));
+            if (apiResponse.IsError)
             {
-                var deleteUserContent = new { CommandingUserEmail = Data.Initiator };
-                await identityClient.DeleteUserAsync(Data.Domain, Data.UserEmail, JsonConvert.SerializeObject(deleteUserContent));
-            }
-            catch (HttpClientException ex)
-            {
-                logger.LogError(ex, $"Failed to remove user '{Data.UserEmail}' after a Saga failure.");
+                logger.LogError($"Failed to remove user '{Data.UserEmail}' after a Saga failure.");
             }
             logger.LogDebug($"Successfully removed user '{Data.UserEmail}' after a Saga failure.");
         }
@@ -68,7 +63,7 @@ namespace Ranger.Services.Operations
             await Task.Run(() =>
             {
                 logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
@@ -106,7 +101,7 @@ namespace Ranger.Services.Operations
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
             var notificationText = $"Successfully created {Data.UserEmail} but failed to set their authorized projects. Verify the selected projects and try again.";
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
@@ -133,30 +128,28 @@ namespace Ranger.Services.Operations
             Data.FirstName = message.FirstName;
             Data.Token = message.Token;
 
-            busPublisher.Send(new IncrementResourceCount(Data.Domain, ResourceEnum.Account), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new IncrementResourceCount(Data.TenantId, ResourceEnum.Account), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 
         public async Task HandleAsync(SendNewUserEmailSent message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} was succesfully created.", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} was succesfully created.", Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
-        public async Task HandleAsync(CreateUserSagaInitializer message, ISagaContext context)
+        public Task HandleAsync(CreateUserSagaInitializer message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
-            Data.DatabaseUsername = databaseUsername;
-            Data.Domain = message.Domain;
+            Data.TenantId = message.TenantId;
             Data.UserEmail = message.Email;
             Data.Initiator = message.CommandingUserEmail;
             Data.NewAuthorizedProjects = message.AuthorizedProjects;
             Data.NewRole = Enum.Parse<RolesEnum>(message.Role);
 
             var createNewUser = new CreateUser(
-                message.Domain,
+                message.TenantId,
                 message.Email,
                 message.FirstName,
                 message.LastName,
@@ -165,6 +158,7 @@ namespace Ranger.Services.Operations
                 message.AuthorizedProjects
             );
             busPublisher.Send(createNewUser, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(CreateUserRejected message, ISagaContext context)
@@ -185,7 +179,7 @@ namespace Ranger.Services.Operations
             {
                 if (Data.NewAuthorizedProjects.Count() > 0)
                 {
-                    busPublisher.Send(new UpdateUserProjects(Data.Domain, Data.NewAuthorizedProjects, Data.UserId, Data.UserEmail, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new UpdateUserProjects(Data.TenantId, Data.NewAuthorizedProjects, Data.UserId, Data.UserEmail, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 else
                 {
@@ -202,17 +196,15 @@ namespace Ranger.Services.Operations
 
         private async Task SendNewUserEmail(ISagaContext context)
         {
-            IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(Data.Domain, Data.UserEmail, Data.NewRole, Data.NewAuthorizedProjects, projectsClient).ConfigureAwait(false);
+            IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(Data.TenantId, Data.UserEmail, Data.NewRole, Data.NewAuthorizedProjects, projectsClient).ConfigureAwait(false);
 
-            var organizationNameModel = await tenantsClient.GetTenantAsync<TenantOrganizationNameModel>(Data.Domain).ConfigureAwait(false);
             await Task.Run(() =>
             {
                 var sendNewUserEmail = new SendNewUserEmail(
                     Data.UserId,
                     Data.UserEmail,
                     Data.FirstName,
-                    Data.Domain,
-                    organizationNameModel.OrganizationName,
+                    Data.TenantId,
                     Enum.GetName(typeof(RolesEnum), Data.NewRole),
                     Data.Token,
                     authorizedProjectNames

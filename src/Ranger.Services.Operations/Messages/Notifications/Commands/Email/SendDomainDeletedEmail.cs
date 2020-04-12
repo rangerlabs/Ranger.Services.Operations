@@ -7,9 +7,9 @@ namespace Ranger.Services.Operations.Messages.Notifications
     {
         public string Email { get; }
         public string FirstName { get; }
-        public string OrganizationName { get; }
+        public string TenantId { get; }
 
-        public SendDomainDeletedEmail(string email, string firstName, string organizationName)
+        public SendDomainDeletedEmail(string email, string firstName, string tenantId)
         {
             if (string.IsNullOrWhiteSpace(email))
             {
@@ -19,14 +19,14 @@ namespace Ranger.Services.Operations.Messages.Notifications
             {
                 throw new System.ArgumentNullException(nameof(firstName));
             }
-            if (string.IsNullOrWhiteSpace(organizationName))
+            if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new System.ArgumentNullException(nameof(organizationName));
+                throw new System.ArgumentNullException(nameof(tenantId));
             }
 
             this.Email = email;
             this.FirstName = firstName;
-            this.OrganizationName = organizationName;
+            this.TenantId = tenantId;
         }
     }
 }

@@ -9,7 +9,7 @@ namespace Ranger.Services.Operations.Messages.Operations
     {
         public UpdateIntegrationSagaInitializer(
             string commandingUserEmail,
-            string domain,
+            string tenantId,
             string name,
             Guid projectId,
             string messageJsonContent,
@@ -21,9 +21,9 @@ namespace Ranger.Services.Operations.Messages.Operations
                 throw new ArgumentException($"{nameof(commandingUserEmail)} was null or whitespace.");
             }
 
-            if (string.IsNullOrEmpty(domain))
+            if (string.IsNullOrEmpty(tenantId))
             {
-                throw new ArgumentException($"{nameof(domain)} was null or whitespace.");
+                throw new ArgumentException($"{nameof(tenantId)} was null or whitespace.");
             }
 
             if (string.IsNullOrEmpty(name))
@@ -41,7 +41,7 @@ namespace Ranger.Services.Operations.Messages.Operations
             }
 
             CommandingUserEmail = commandingUserEmail;
-            Domain = domain;
+            TenantId = tenantId;
             Name = name;
             ProjectId = projectId;
             MessageJsonContent = messageJsonContent;

@@ -6,15 +6,15 @@ namespace Ranger.Services.Operations.Messages.Operations
     [MessageNamespaceAttribute("operations")]
     public class DeleteIntegrationSagaInitializer : SagaInitializer, ICommand
     {
-        public DeleteIntegrationSagaInitializer(string commandingUserEmail, string domain, string name, Guid projectId)
+        public DeleteIntegrationSagaInitializer(string commandingUserEmail, string tenantId, string name, Guid projectId)
         {
             if (string.IsNullOrWhiteSpace(commandingUserEmail))
             {
                 throw new System.ArgumentException($"{nameof(commandingUserEmail)} was null or whitespace.");
             }
-            if (string.IsNullOrWhiteSpace(domain))
+            if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new System.ArgumentException($"{nameof(domain)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(tenantId)} was null or whitespace.");
             }
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -24,7 +24,7 @@ namespace Ranger.Services.Operations.Messages.Operations
 
             this.CommandingUserEmail = commandingUserEmail;
 
-            Domain = domain;
+            TenantId = tenantId;
             this.Name = name;
             this.ProjectId = projectId;
         }

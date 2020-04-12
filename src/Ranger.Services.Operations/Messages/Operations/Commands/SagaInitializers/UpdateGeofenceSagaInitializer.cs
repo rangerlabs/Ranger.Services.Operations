@@ -11,7 +11,7 @@ namespace Ranger.Services.Operations.Messages.Operations
     {
         public UpdateGeofenceSagaInitializer(bool frontendRequest,
             string commandingUserEmailOrTokenPrefix,
-            string domain,
+            string tenantId,
             Guid id,
             string externalId,
             Guid projectId,
@@ -34,9 +34,9 @@ namespace Ranger.Services.Operations.Messages.Operations
             {
                 throw new System.ArgumentException($"{nameof(commandingUserEmailOrTokenPrefix)} was null or whitespace.");
             }
-            if (string.IsNullOrWhiteSpace(domain))
+            if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new System.ArgumentException($"{nameof(domain)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(tenantId)} was null or whitespace.");
             }
             if (string.IsNullOrWhiteSpace(externalId))
             {
@@ -59,7 +59,7 @@ namespace Ranger.Services.Operations.Messages.Operations
             this.Shape = shape;
             this.Radius = radius;
 
-            Domain = domain;
+            TenantId = tenantId;
             this.Id = id;
             this.ExternalId = externalId;
             this.ProjectId = projectId;

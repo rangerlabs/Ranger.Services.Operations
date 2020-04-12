@@ -14,11 +14,11 @@ namespace Ranger.Services.Operations.Messages.Operations
         public string CommandingUserEmail { get; }
         public IEnumerable<Guid> AuthorizedProjects { get; }
 
-        public CreateUserSagaInitializer(string domain, string email, string firstName, string lastName, string role, string commandingUserEmail, IEnumerable<Guid> authorizedProjects)
+        public CreateUserSagaInitializer(string tenantId, string email, string firstName, string lastName, string role, string commandingUserEmail, IEnumerable<Guid> authorizedProjects)
         {
-            if (string.IsNullOrEmpty(domain))
+            if (string.IsNullOrEmpty(tenantId))
             {
-                throw new System.ArgumentException($"{nameof(domain)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(tenantId)} was null or whitespace.");
             }
 
             if (string.IsNullOrEmpty(email))
@@ -46,7 +46,7 @@ namespace Ranger.Services.Operations.Messages.Operations
                 throw new System.ArgumentException($"{nameof(commandingUserEmail)} was null or whitespace.");
             }
 
-            Domain = domain;
+            TenantId = tenantId;
             this.Email = email;
             this.FirstName = firstName;
             this.LastName = lastName;

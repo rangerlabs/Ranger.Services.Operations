@@ -10,12 +10,11 @@ namespace Ranger.Services.Operations.Messages.Notifications
         public string TransferFirstName { get; }
         public string OwnerFirstName { get; }
         public string OwnerLastName { get; }
-        public string Domain { get; }
-        public string OrganizationName { get; }
+        public string TenantId { get; }
         public string Token { get; }
         public string CorrelationId { get; }
 
-        public SendPrimaryOwnerTransferEmails(string transferEmail, string ownerEmail, string transferFirstName, string ownerFirstName, string ownerLastName, string domain, string organizationName, string token, string correlationId)
+        public SendPrimaryOwnerTransferEmails(string transferEmail, string ownerEmail, string transferFirstName, string ownerFirstName, string ownerLastName, string tenantId, string token, string correlationId)
         {
             if (string.IsNullOrWhiteSpace(transferEmail))
             {
@@ -37,13 +36,9 @@ namespace Ranger.Services.Operations.Messages.Notifications
             {
                 throw new System.ArgumentNullException(nameof(ownerLastName));
             }
-            if (string.IsNullOrWhiteSpace(domain))
+            if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new System.ArgumentNullException(nameof(domain));
-            }
-            if (string.IsNullOrWhiteSpace(organizationName))
-            {
-                throw new System.ArgumentNullException(nameof(organizationName));
+                throw new System.ArgumentNullException(nameof(tenantId));
             }
             if (string.IsNullOrWhiteSpace(token))
             {
@@ -59,8 +54,7 @@ namespace Ranger.Services.Operations.Messages.Notifications
             this.TransferFirstName = transferFirstName;
             this.OwnerFirstName = ownerFirstName;
             this.OwnerLastName = ownerLastName;
-            this.Domain = domain;
-            this.OrganizationName = organizationName;
+            this.TenantId = tenantId;
             this.Token = token;
             this.CorrelationId = correlationId;
         }

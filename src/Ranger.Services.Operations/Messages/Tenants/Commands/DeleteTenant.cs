@@ -5,12 +5,12 @@ namespace Ranger.Services.Operations.Messages.Tenants.Commands
     [MessageNamespace("tenants")]
     public class DeleteTenant : ICommand
     {
-        public DeleteTenant(string commandingUserEmail, string domain)
+        public DeleteTenant(string commandingUserEmail, string tenantId)
         {
             this.CommandingUserEmail = commandingUserEmail;
-            this.Domain = domain;
+            this.TenantId = tenantId;
         }
         public string CommandingUserEmail { get; }
-        public string Domain { get; }
+        public string TenantId { get; }
     }
 }

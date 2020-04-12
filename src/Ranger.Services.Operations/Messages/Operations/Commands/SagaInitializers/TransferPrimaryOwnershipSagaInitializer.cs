@@ -8,7 +8,7 @@ namespace Ranger.Services.Operations
     {
         public TransferPrimaryOwnershipSagaInitializer(string commandingUserEmail,
             string transferUserEmail,
-            string domain)
+            string tenantId)
         {
             if (string.IsNullOrWhiteSpace(commandingUserEmail))
             {
@@ -20,14 +20,14 @@ namespace Ranger.Services.Operations
                 throw new System.ArgumentException($"{nameof(transferUserEmail)} was null or whitespace.");
             }
 
-            if (string.IsNullOrWhiteSpace(domain))
+            if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new System.ArgumentException($"{nameof(domain)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(tenantId)} was null or whitespace.");
             }
 
             CommandingUserEmail = commandingUserEmail;
             TransferUserEmail = transferUserEmail;
-            Domain = domain;
+            TenantId = tenantId;
         }
 
         public string CommandingUserEmail { get; private set; }
