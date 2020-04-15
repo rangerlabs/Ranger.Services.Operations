@@ -15,10 +15,10 @@ namespace Ranger.Services.Operations.Data
         public object Data { get; set; }
         public Type DataType { get; set; }
 
-        public EntityFrameworkSagaState(SagaId id, Type type, string TenantId, SagaStates state, object data, Type dataType)
+        public EntityFrameworkSagaState(SagaId id, Type type, string tenantId, SagaStates state, object data, Type dataType)
         {
             this.SagaId = id;
-            this.TenantId = TenantId;
+            this.TenantId = tenantId;
             this.Type = type;
             this.State = state;
             this.Data = data;

@@ -41,7 +41,7 @@ namespace Ranger.Services.Operations.Data.Migrations
                 columns: table => new
                 {
                     saga_id = table.Column<string>(nullable: false),
-                    database_username = table.Column<string>(nullable: false),
+                    tenant_id = table.Column<string>(nullable: false),
                     saga_type = table.Column<string>(nullable: false),
                     data = table.Column<string>(nullable: true)
                 },

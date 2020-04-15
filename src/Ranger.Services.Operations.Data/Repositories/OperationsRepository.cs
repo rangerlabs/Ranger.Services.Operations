@@ -20,10 +20,10 @@ namespace Ranger.Services.Operations.Data
             this.context = context;
         }
 
-        public async Task<EntityFrameworkSagaStateResponse> GetSagaState(SagaId id, string TenantId)
+        public async Task<EntityFrameworkSagaStateResponse> GetSagaState(SagaId id, string tenantId)
         {
             EntityFrameworkSagaState state = null;
-            var cachedSagaState = await context.SagaStates.FirstOrDefaultAsync(_ => _.SagaId == id && _.TenantId == TenantId);
+            var cachedSagaState = await context.SagaStates.FirstOrDefaultAsync(_ => _.SagaId == id && _.TenantId == tenantId);
             if (cachedSagaState != null && !String.IsNullOrWhiteSpace(cachedSagaState.Data))
             {
                 state = JsonConvert.DeserializeObject<EntityFrameworkSagaState>(cachedSagaState.Data);
