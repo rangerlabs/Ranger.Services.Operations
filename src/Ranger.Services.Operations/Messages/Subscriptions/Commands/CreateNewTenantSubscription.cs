@@ -6,7 +6,7 @@ namespace Ranger.Services.Operations.Messages.Subscriptions
     [MessageNamespace("subscriptions")]
     public class CreateNewTenantSubscription : ICommand
     {
-        public CreateNewTenantSubscription(string tenantId, string commandingUserEmail, string firstName, string lastName, string organizationName, string tenantId)
+        public CreateNewTenantSubscription(string tenantId, string commandingUserEmail, string firstName, string lastName, string organizationName)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
             {

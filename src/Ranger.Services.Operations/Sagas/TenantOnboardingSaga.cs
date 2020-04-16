@@ -103,7 +103,7 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                busPublisher.Send(new CreateNewTenantSubscription(Data.TenantId, Data.Initiator, Data.FirstName, Data.LastName, Data.OrganizationName, Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new CreateNewTenantSubscription(Data.TenantId, Data.Initiator, Data.FirstName, Data.LastName, Data.OrganizationName), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
