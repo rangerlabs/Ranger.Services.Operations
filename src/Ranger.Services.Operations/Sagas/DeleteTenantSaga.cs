@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using AutoWrapper.Wrappers;
 using Chronicle;
 using Microsoft.Extensions.Logging;
 using Ranger.Common;
@@ -47,19 +48,32 @@ namespace Ranger.Services.Operations.Sagas
             return Task.CompletedTask;
         }
 
+        //TODO: How to handle retries in these handlers?
         public async Task HandleAsync(DeleteTenantSagaInitializer message, ISagaContext context)
         {
-            Data.TenantId = message.TenantId;
-            var apiResponse = await identityClient.GetUserAsync<User>(message.TenantId, message.CommandingUserEmail);
-            if (apiResponse.IsError)
+            try
+            {
+                Data.TenantId = message.TenantId;
+                RangerApiResponse<User> apiResponse = null;
+                try
+                {
+                    apiResponse = await identityClient.GetUserAsync<User>(message.TenantId, message.CommandingUserEmail);
+                }
+                catch (ApiException ex)
+                {
+                    logger.LogError(ex, "Failed to retrieve the Primary Owner when attempting Primary Ownership transfer.");
+                    await RejectAsync();
+                }
+                Data.OwnerUser = apiResponse.Result;
+                Data.Initiator = message.CommandingUserEmail;
+                Data.TenantId = message.TenantId;
+                busPublisher.Send(new DeleteTenant(message.CommandingUserEmail, message.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            }
+            catch (ApiException)
             {
                 logger.LogError("Failed to retrieve the Primary Owner when attempting Primary Ownership transfer.");
                 await RejectAsync();
-                Data.OwnerUser = apiResponse.Result;
             }
-            Data.Initiator = message.CommandingUserEmail;
-            Data.TenantId = message.TenantId;
-            busPublisher.Send(new DeleteTenant(message.CommandingUserEmail, message.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
         public Task HandleAsync(TenantDeleted message, ISagaContext context)

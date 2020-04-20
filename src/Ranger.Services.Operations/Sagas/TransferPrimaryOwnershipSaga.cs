@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using AutoWrapper.Wrappers;
 using Chronicle;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -50,21 +51,37 @@ namespace Ranger.Services.Operations.Sagas
 
         private async Task SetUserDataProperties(TransferPrimaryOwnershipSagaInitializer message)
         {
-            var apiResponse = await identityClient.GetUserAsync<User>(message.TenantId, message.CommandingUserEmail);
-            if (apiResponse.IsError)
+            try
             {
-                logger.LogError("Failed to retrieve the Primary Owner when attempting Primary Ownership transfer.");
-                await RejectAsync();
-            }
-            Data.OwnerUser = apiResponse.Result;
+                RangerApiResponse<User> apiResponse = null;
+                try
+                {
+                    apiResponse = await identityClient.GetUserAsync<User>(message.TenantId, message.CommandingUserEmail);
+                }
+                catch (ApiException ex)
+                {
+                    logger.LogError(ex, "Failed to retrieve the Primary Owner when attempting Primary Ownership transfer.");
+                    await RejectAsync();
+                }
+                Data.OwnerUser = apiResponse.Result;
 
-            var apiResponse1 = await identityClient.GetUserAsync<User>(message.TenantId, message.TransferUserEmail);
-            if (apiResponse1.IsError)
+                RangerApiResponse<User> apiResponse1 = null;
+                try
+                {
+                    apiResponse1 = await identityClient.GetUserAsync<User>(message.TenantId, message.TransferUserEmail);
+                }
+                catch (ApiException ex)
+                {
+                    logger.LogError(ex, $"Failed to retrieve the requested Transfer User '{message.TransferUserEmail}'.");
+                    await RejectAsync();
+                }
+                Data.TransferUser = apiResponse1.Result;
+            }
+            catch (ApiException)
             {
                 logger.LogError($"Failed to retrieve the requested Transfer User '{message.TransferUserEmail}'.");
                 await RejectAsync();
             }
-            Data.TransferUser = apiResponse1.Result;
         }
 
         public Task CompensateAsync(PrimaryOwnershipTransfered message, ISagaContext context)

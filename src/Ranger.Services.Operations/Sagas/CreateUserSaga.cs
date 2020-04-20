@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoWrapper.Wrappers;
 using Chronicle;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -42,14 +43,24 @@ namespace Ranger.Services.Operations
 
         public async Task CompensateAsync(UserCreated message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            var deleteUserContent = new { CommandingUserEmail = Data.Initiator };
-            var apiResponse = await identityClient.DeleteUserAsync(Data.TenantId, Data.UserEmail, JsonConvert.SerializeObject(deleteUserContent));
-            if (apiResponse.IsError)
+            try
+            {
+                logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+                var deleteUserContent = new { CommandingUserEmail = Data.Initiator };
+                try
+                {
+                    await identityClient.DeleteUserAsync(Data.TenantId, Data.UserEmail, JsonConvert.SerializeObject(deleteUserContent));
+                }
+                catch (ApiException ex)
+                {
+                    logger.LogError(ex, $"Failed to remove user '{Data.UserEmail}' after a Saga failure.");
+                }
+                logger.LogDebug($"Successfully removed user '{Data.UserEmail}' after a Saga failure.");
+            }
+            catch (ApiException)
             {
                 logger.LogError($"Failed to remove user '{Data.UserEmail}' after a Saga failure.");
             }
-            logger.LogDebug($"Successfully removed user '{Data.UserEmail}' after a Saga failure.");
         }
 
         public Task CompensateAsync(SendNewUserEmailSent message, ISagaContext context)
