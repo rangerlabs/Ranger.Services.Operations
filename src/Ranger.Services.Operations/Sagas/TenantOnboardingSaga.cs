@@ -68,7 +68,7 @@ namespace Ranger.Services.Operations
 
         public Task HandleAsync(Messages.Identity.TenantInitialized message, ISagaContext context)
         {
-            this.busPublisher.Send(new Messages.Projects.InitializeTenant(Data.TenantId, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)))
+            this.busPublisher.Send(new Messages.Projects.InitializeTenant(Data.TenantId, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 
