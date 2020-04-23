@@ -2,6 +2,7 @@ using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations.Messages.Subscriptions
 {
+    [MessageNamespace("subscriptions")]
     public class IncrementResourceCountRejected : IRejectedEvent
     {
         public IncrementResourceCountRejected(string reason, string code)

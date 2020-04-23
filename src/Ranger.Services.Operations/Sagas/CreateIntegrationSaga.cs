@@ -95,7 +95,7 @@ namespace Ranger.Services.Operations
         public Task HandleAsync(ResourceCountIncremented message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            var createIntegration = new CreateIntegration(message.TenantId, Data.Message.CommandingUserEmail, Data.Message.ProjectId, Data.Message.MessageJsonContent, Data.Message.IntegrationType);
+            var createIntegration = new CreateIntegration(Data.TenantId, Data.Message.CommandingUserEmail, Data.Message.ProjectId, Data.Message.MessageJsonContent, Data.Message.IntegrationType);
             busPublisher.Send(createIntegration, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }

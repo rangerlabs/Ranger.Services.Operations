@@ -119,7 +119,11 @@ namespace Ranger.Services.Operations.Sagas
         public Task HandleAsync(DecrementResourceCountRejected message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            logger.LogCritical($"Failed to decrement the Geofence utilization for tenant domain '{Data.TenantId}'! Reason: {message.Reason}.");
+            logger.LogCritical($"Failed to decrement the Geofence utilization for tenant domain '{Data.TenantId}'! Reason: {message.Reason}");
+            if (Data.Message.FrontendRequest)
+            {
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"Failed to delete geofence '{Data.Message.ExternalId}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            }
             return RejectAsync();
         }
     }

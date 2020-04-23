@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
 using Ranger.Common;
-using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Geofences;
