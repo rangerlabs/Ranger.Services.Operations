@@ -45,7 +45,7 @@ namespace Ranger.Services.Operations
         {
             try
             {
-                logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+                logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
                 var deleteUserContent = new { CommandingUserEmail = Data.Initiator };
                 try
                 {
@@ -53,19 +53,19 @@ namespace Ranger.Services.Operations
                 }
                 catch (ApiException ex)
                 {
-                    logger.LogError(ex, $"Failed to remove user '{Data.UserEmail}' after a Saga failure.");
+                    logger.LogError(ex, $"Failed to remove user '{Data.UserEmail}' after a Saga failure");
                 }
-                logger.LogDebug($"Successfully removed user '{Data.UserEmail}' after a Saga failure.");
+                logger.LogDebug($"Successfully removed user '{Data.UserEmail}' after a Saga failure");
             }
             catch (ApiException)
             {
-                logger.LogError($"Failed to remove user '{Data.UserEmail}' after a Saga failure.");
+                logger.LogError($"Failed to remove user '{Data.UserEmail}' after a Saga failure");
             }
         }
 
         public Task CompensateAsync(SendNewUserEmailSent message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
@@ -73,60 +73,60 @@ namespace Ranger.Services.Operations
         {
             await Task.Run(() =>
             {
-                logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+                logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
                 busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error creating user {Data.UserEmail}: {Data.RejectReason}", Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
         public Task CompensateAsync(CreateUserRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(UpdateUserProjectsRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(UserProjectsUpdated message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(ResourceCountIncremented message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(IncrementResourceCountRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public async Task HandleAsync(UpdateUserProjectsRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            var notificationText = $"Successfully created {Data.UserEmail} but failed to set their authorized projects. Verify the selected projects and try again.";
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
+            var notificationText = $"Successfully created {Data.UserEmail} but failed to set their authorized projects. Verify the selected projects and try again";
             busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
         public async Task HandleAsync(UserProjectsUpdated message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             var notificationText = "";
             if (message.UnSuccessfullyAddedProjectIds.Count() > 0)
             {
-                notificationText = $"Successfully created {Data.UserEmail} but some projects failed be added. Verify the selected projects and try again.";
+                notificationText = $"Successfully created {Data.UserEmail} but some projects failed be added. Verify the selected projects and try again";
             }
             else
             {
-                notificationText = $"User {Data.UserEmail} was successfully created.";
+                notificationText = $"User {Data.UserEmail} was successfully created";
             }
 
             await SendNewUserEmail(context);
@@ -134,7 +134,7 @@ namespace Ranger.Services.Operations
 
         public Task HandleAsync(UserCreated message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.UserId = message.UserId;
             Data.FirstName = message.FirstName;
             Data.Token = message.Token;
@@ -145,14 +145,14 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(SendNewUserEmailSent message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} was succesfully created.", Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"User {Data.UserEmail} was succesfully created", Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
         public Task HandleAsync(CreateUserSagaInitializer message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.TenantId = message.TenantId;
             Data.UserEmail = message.Email;
             Data.Initiator = message.CommandingUserEmail;
@@ -174,14 +174,14 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(CreateUserRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.RejectReason = message.Reason;
             await RejectAsync();
         }
 
         public async Task HandleAsync(ResourceCountIncremented message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             if (Data.NewRole != RolesEnum.User)
             {
                 await SendNewUserEmail(context);
@@ -201,7 +201,7 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(IncrementResourceCountRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             await RejectAsync();
         }
 

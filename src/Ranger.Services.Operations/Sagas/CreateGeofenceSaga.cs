@@ -29,38 +29,38 @@ namespace Ranger.Services.Operations
 
         public Task CompensateAsync(CreateGeofenceSagaInitializer message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(GeofenceCreated message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             busPublisher.Send(new DeleteGeofence("System", Data.TenantId, Data.Message.ExternalId, Data.Message.ProjectId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(CreateGeofenceRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(ResourceCountIncremented message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(IncrementResourceCountRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(CreateGeofenceSagaInitializer message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.Message = message;
             Data.TenantId = message.TenantId;
             Data.Initiator = message.CommandingUserEmailOrTokenPrefix;
@@ -70,11 +70,11 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(GeofenceCreated message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.Id = message.Id;
             if (Data.Message.FrontendRequest)
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"Geofence '{Data.Message.ExternalId}' was successfully created.", Data.TenantId, Data.Initiator, OperationsStateEnum.Completed, Data.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"Geofence '{Data.Message.ExternalId}' was successfully created", Data.TenantId, Data.Initiator, OperationsStateEnum.Completed, Data.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 await CompleteAsync();
             }
             else
@@ -85,7 +85,7 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(CreateGeofenceRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             if (Data.Message.FrontendRequest)
             {
                 if (!string.IsNullOrWhiteSpace(message.Reason))
@@ -94,7 +94,7 @@ namespace Ranger.Services.Operations
                 }
                 else
                 {
-                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"An error occurred creating geofence '{Data.Message.ExternalId}'.", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"An error occurred creating geofence '{Data.Message.ExternalId}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 await RejectAsync();
             }
@@ -106,7 +106,7 @@ namespace Ranger.Services.Operations
 
         public Task HandleAsync(ResourceCountIncremented message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             var createGeofence = new CreateGeofence(
                 Data.Message.CommandingUserEmailOrTokenPrefix,
                 Data.Message.TenantId,
@@ -133,10 +133,10 @@ namespace Ranger.Services.Operations
 
         public async Task HandleAsync(IncrementResourceCountRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             if (Data.Message.FrontendRequest)
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"Failed to create geofence '{Data.Message.ExternalId}'. Subscription limit reached.", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected, Data.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-created", $"Failed to create geofence '{Data.Message.ExternalId}'. Subscription limit reached", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected, Data.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             await RejectAsync();
         }

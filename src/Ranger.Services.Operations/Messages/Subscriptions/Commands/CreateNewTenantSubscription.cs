@@ -10,23 +10,23 @@ namespace Ranger.Services.Operations.Messages.Subscriptions
         {
             if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new System.ArgumentException($"{nameof(tenantId)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(tenantId)} was null or whitespace");
             }
             if (string.IsNullOrWhiteSpace(commandingUserEmail))
             {
-                throw new System.ArgumentException($"{nameof(commandingUserEmail)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(commandingUserEmail)} was null or whitespace");
             }
             if (string.IsNullOrWhiteSpace(firstName))
             {
-                throw new System.ArgumentException($"{nameof(firstName)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(firstName)} was null or whitespace");
             }
             if (string.IsNullOrWhiteSpace(lastName))
             {
-                throw new System.ArgumentException($"{nameof(lastName)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(lastName)} was null or whitespace");
             }
             if (string.IsNullOrWhiteSpace(organizationName))
             {
-                throw new ArgumentException($"{nameof(organizationName)} was null or whitespace.");
+                throw new ArgumentException($"{nameof(organizationName)} was null or whitespace");
             }
 
             this.TenantId = tenantId;

@@ -14,7 +14,7 @@ namespace Ranger.Services.Operations.Messages.Subscriptions
         {
             if (String.IsNullOrWhiteSpace(tenantId))
             {
-                throw new ArgumentException($"{nameof(tenantId)} was null or whitespace.");
+                throw new ArgumentException($"{nameof(tenantId)} was null or whitespace");
             }
             this.TenantId = tenantId;
             this.Resource = resource;

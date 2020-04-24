@@ -59,7 +59,7 @@ namespace Ranger.Services.Operations.Data
         {
             var orderedSagaLogs = sagaLogs.OrderByDescending(_ => _.CreatedAt);
             var lastMessage = orderedSagaLogs.FirstOrDefault();
-            return lastMessage.Type is IRejectedEvent re ? re.Reason : "A reason could not be provided for the rejection of this request.";
+            return lastMessage.Type is IRejectedEvent re ? re.Reason : "A reason could not be provided for the rejection of this request";
         }
 
         private string GetPendingSagaMetrics(IEnumerable<ISagaLogData> sagaLogs)

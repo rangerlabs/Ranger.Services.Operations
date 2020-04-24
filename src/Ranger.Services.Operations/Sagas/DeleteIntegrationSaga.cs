@@ -30,37 +30,37 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task CompensateAsync(DeleteIntegrationSagaInitializer message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(IntegrationDeleted message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(DeleteIntegrationRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(ResourceCountDecremented message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(DecrementResourceCountRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(DeleteIntegrationSagaInitializer message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.TenantId = message.TenantId;
             Data.Initiator = message.CommandingUserEmail;
             Data.Message = message;
@@ -70,28 +70,28 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(IntegrationDeleted message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
-            busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-deleted", $"Integration '{Data.Message.Name}' was successfully deleted.", Data.TenantId, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
+            busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-deleted", $"Integration '{Data.Message.Name}' was successfully deleted", Data.TenantId, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
         public async Task HandleAsync(DeleteIntegrationRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             if (!string.IsNullOrWhiteSpace(message.Reason))
             {
                 busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-deleted", $"An error occurred deleting integration '{Data.Message.Name}'. {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             else
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-deleted", $"An error occurred deleting integration '{Data.Message.Name}'.", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-deleted", $"An error occurred deleting integration '{Data.Message.Name}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             await RejectAsync();
         }
 
         public Task HandleAsync(ResourceCountDecremented message, ISagaContext context)
         {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             var deleteIntegration = new DeleteIntegration(
                 Data.Initiator,
                 Data.Message.TenantId,
@@ -104,7 +104,7 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task HandleAsync(DecrementResourceCountRejected message, ISagaContext context)
         {
-            logger.LogCritical($"Failed to decrement the Integration utilization for tenant domain '{Data.TenantId}'! Reason: {message.Reason}.");
+            logger.LogCritical($"Failed to decrement the Integration utilization for tenant domain '{Data.TenantId}'! Reason: {message.Reason}");
             return Task.CompletedTask;
         }
     }

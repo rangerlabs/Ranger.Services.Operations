@@ -17,22 +17,22 @@ namespace Ranger.Services.Operations.Messages.Operations
         {
             if (string.IsNullOrWhiteSpace(commandingUserEmail))
             {
-                throw new ArgumentException($"{nameof(commandingUserEmail)} was null or whitespace.");
+                throw new ArgumentException($"{nameof(commandingUserEmail)} was null or whitespace");
             }
 
             if (string.IsNullOrEmpty(tenantId))
             {
-                throw new ArgumentException($"{nameof(tenantId)} was null or whitespace.");
+                throw new ArgumentException($"{nameof(tenantId)} was null or whitespace");
             }
 
             if (string.IsNullOrEmpty(name))
             {
-                throw new ArgumentException($"{nameof(name)} was null or whitespace.");
+                throw new ArgumentException($"{nameof(name)} was null or whitespace");
             }
 
             if (string.IsNullOrEmpty(messageJsonContent))
             {
-                throw new ArgumentException($"{nameof(messageJsonContent)} was null or whitespace.");
+                throw new ArgumentException($"{nameof(messageJsonContent)} was null or whitespace");
             }
 
             CommandingUserEmail = commandingUserEmail;

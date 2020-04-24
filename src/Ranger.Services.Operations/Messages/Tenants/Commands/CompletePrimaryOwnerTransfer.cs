@@ -11,15 +11,15 @@ namespace Ranger.Services.Operations.Messages.Tenants.Commands
         {
             if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new ArgumentException($"{nameof(tenantId)} was null or whitespace.");
+                throw new ArgumentException($"{nameof(tenantId)} was null or whitespace");
             }
             if (string.IsNullOrWhiteSpace(commandingUserEmail))
             {
-                throw new ArgumentException($"{nameof(commandingUserEmail)} was null or whitespace.");
+                throw new ArgumentException($"{nameof(commandingUserEmail)} was null or whitespace");
             }
             if (state is PrimaryOwnerTransferStateEnum.Pending)
             {
-                throw new ArgumentException("'Pending' is an invalid status to complete a Primary Owner Transfer.");
+                throw new ArgumentException("'Pending' is an invalid status to complete a Primary Owner Transfer");
             }
 
             this.TenantId = tenantId;

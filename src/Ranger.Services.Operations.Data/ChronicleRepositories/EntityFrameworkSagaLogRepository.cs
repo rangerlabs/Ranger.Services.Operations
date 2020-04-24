@@ -60,7 +60,7 @@ namespace Ranger.Services.Operations.Data
         {
             if (sagaLogData is null)
             {
-                throw new ArgumentException($"nameof(sagaLogData) was null.");
+                throw new ArgumentException($"nameof(sagaLogData) was null");
             }
 
             var entityFrameworkSagaLogData = new EntityFrameworkSagaLogData(

@@ -32,19 +32,19 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task CompensateAsync(DeleteTenantSagaInitializer message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(TenantDeleted message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(DeleteTenantRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
@@ -61,7 +61,7 @@ namespace Ranger.Services.Operations.Sagas
                 }
                 catch (ApiException ex)
                 {
-                    logger.LogError(ex, "Failed to retrieve the Primary Owner when attempting Primary Ownership transfer.");
+                    logger.LogError(ex, "Failed to retrieve the Primary Owner when attempting Primary Ownership transfer");
                     await RejectAsync();
                 }
                 Data.OwnerUser = apiResponse.Result;
@@ -71,7 +71,7 @@ namespace Ranger.Services.Operations.Sagas
             }
             catch (ApiException)
             {
-                logger.LogError("Failed to retrieve the Primary Owner when attempting Primary Ownership transfer.");
+                logger.LogError("Failed to retrieve the Primary Owner when attempting Primary Ownership transfer");
                 await RejectAsync();
             }
         }
@@ -84,7 +84,7 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task HandleAsync(DeleteTenantRejected message, ISagaContext context)
         {
-            logger.LogError($"Failed to delete tenant domain '{Data.TenantId}'.");
+            logger.LogError($"Failed to delete tenant domain '{Data.TenantId}'");
             return Task.CompletedTask;
         }
     }

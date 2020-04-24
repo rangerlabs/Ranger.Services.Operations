@@ -10,12 +10,12 @@ namespace Ranger.Services.Operations.Messages.Identity.Commands
         {
             if (string.IsNullOrWhiteSpace(transferUserEmail))
             {
-                throw new System.ArgumentException($"{nameof(transferUserEmail)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(transferUserEmail)} was null or whitespace");
             }
 
             if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new System.ArgumentException($"{nameof(tenantId)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(tenantId)} was null or whitespace");
             }
 
             TransferUserEmail = transferUserEmail;

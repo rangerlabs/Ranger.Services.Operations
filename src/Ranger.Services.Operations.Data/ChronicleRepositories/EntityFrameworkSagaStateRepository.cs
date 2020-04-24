@@ -43,7 +43,7 @@ namespace Ranger.Services.Operations.Data
         {
             if (state is null)
             {
-                throw new ArgumentNullException($"{nameof(state)} was null.");
+                throw new ArgumentNullException($"{nameof(state)} was null");
             }
 
             var entityFrameworkSagaState = new EntityFrameworkSagaState(state.Id, state.Type, (state.Data as BaseSagaData).TenantId, state.State, state.Data, state.Data.GetType());

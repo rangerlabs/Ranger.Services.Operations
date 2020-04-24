@@ -56,8 +56,8 @@ namespace Ranger.Services.Operations
 
         public Task CompensateAsync(TenantCreated message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            logger.LogDebug("Dropping tenant.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            logger.LogDebug("Dropping tenant");
             this.busPublisher.Send(new Messages.Identity.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             this.busPublisher.Send(new Messages.Projects.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             this.busPublisher.Send(new Messages.Breadcrumbs.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
@@ -74,7 +74,7 @@ namespace Ranger.Services.Operations
 
         public Task CompensateAsync(Messages.Identity.TenantInitialized message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
@@ -85,7 +85,7 @@ namespace Ranger.Services.Operations
 
         public Task CompensateAsync(Messages.Identity.InitializeTenantRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
@@ -122,7 +122,7 @@ namespace Ranger.Services.Operations
                     OperationsStateEnum.Completed),
                 CorrelationContext.FromId(Guid.Parse(context.SagaId)));
 
-            logger.LogInformation("TenantUserSignup saga completed succesfully.");
+            logger.LogInformation("TenantUserSignup saga completed succesfully");
             await CompleteAsync();
         }
 
@@ -138,7 +138,7 @@ namespace Ranger.Services.Operations
 
         public Task CompensateAsync(Messages.Projects.InitializeTenantRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
@@ -149,7 +149,7 @@ namespace Ranger.Services.Operations
 
         public Task CompensateAsync(Messages.Breadcrumbs.InitializeTenantRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
@@ -160,7 +160,7 @@ namespace Ranger.Services.Operations
 
         public Task CompensateAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
@@ -172,7 +172,7 @@ namespace Ranger.Services.Operations
 
         public Task CompensateAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
@@ -184,7 +184,7 @@ namespace Ranger.Services.Operations
 
         public Task CompensateAsync(Messages.Breadcrumbs.TenantInitialized message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
@@ -205,7 +205,7 @@ namespace Ranger.Services.Operations
 
         public Task CompensateAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
