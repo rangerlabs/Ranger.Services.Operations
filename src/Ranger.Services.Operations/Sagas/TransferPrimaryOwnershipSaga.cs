@@ -173,7 +173,7 @@ namespace Ranger.Services.Operations.Sagas
         public Task CompensateAsync(PrimaryOwnerTransferInitiated message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
-            busPublisher.Send(new CompletePrimaryOwnerTransfer(Data.TenantId, "System", PrimaryOwnerTransferStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new CompletePrimaryOwnerTransfer(Data.TenantId, "Operations", PrimaryOwnerTransferStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 

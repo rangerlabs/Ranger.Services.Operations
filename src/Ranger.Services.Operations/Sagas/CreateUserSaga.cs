@@ -23,10 +23,7 @@ namespace Ranger.Services.Operations
         ISagaAction<CreateUserRejected>,
         ISagaAction<SendNewUserEmailSent>,
         ISagaAction<UserProjectsUpdated>,
-        ISagaAction<ResourceCountIncremented>,
-        ISagaAction<UpdateUserProjectsRejected>,
-        ISagaAction<IncrementResourceCountRejected>
-
+        ISagaAction<UpdateUserProjectsRejected>
     {
         const string EVENT_NAME = "user-created";
         private readonly IBusPublisher busPublisher;
@@ -73,18 +70,6 @@ namespace Ranger.Services.Operations
         }
 
         public Task CompensateAsync(UserProjectsUpdated message, ISagaContext context)
-        {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
-            return Task.CompletedTask;
-        }
-
-        public Task CompensateAsync(ResourceCountIncremented message, ISagaContext context)
-        {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
-            return Task.CompletedTask;
-        }
-
-        public Task CompensateAsync(IncrementResourceCountRejected message, ISagaContext context)
         {
             logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
@@ -151,8 +136,16 @@ namespace Ranger.Services.Operations
             Data.Message = message;
             Data.Initiator = message.CommandingUserEmail;
             Data.NewRole = Enum.Parse<RolesEnum>(message.Role);
-
-            busPublisher.Send(new IncrementResourceCount(Data.TenantId, ResourceEnum.Account), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            var createNewUser = new CreateUser(
+                         Data.TenantId,
+                         Data.Message.Email,
+                         Data.Message.FirstName,
+                         Data.Message.LastName,
+                         Data.Message.Role,
+                         Data.Message.CommandingUserEmail,
+                         Data.Message.AuthorizedProjects
+                     );
+            busPublisher.Send(createNewUser, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 
@@ -160,29 +153,6 @@ namespace Ranger.Services.Operations
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Failed to create user '{Data.Message.Email}'. {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            await RejectAsync();
-        }
-
-        public Task HandleAsync(ResourceCountIncremented message, ISagaContext context)
-        {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
-            var createNewUser = new CreateUser(
-                Data.TenantId,
-                Data.Message.Email,
-                Data.Message.FirstName,
-                Data.Message.LastName,
-                Data.Message.Role,
-                Data.Message.CommandingUserEmail,
-                Data.Message.AuthorizedProjects
-            );
-            busPublisher.Send(createNewUser, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            return Task.CompletedTask;
-        }
-
-        public async Task HandleAsync(IncrementResourceCountRejected message, ISagaContext context)
-        {
-            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Failed to create user '{Data.Message.Email}'. Subscription limit reached", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await RejectAsync();
         }
 

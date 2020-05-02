@@ -3,9 +3,9 @@ using Ranger.RabbitMQ;
 namespace Ranger.Services.Operations.Messages.Subscriptions
 {
     [MessageNamespace("subscriptions")]
-    public class IncrementResourceCountRejected : IRejectedEvent
+    public class NewTenantSubscriptionRejected : IRejectedEvent
     {
-        public IncrementResourceCountRejected(string reason, string code)
+        public NewTenantSubscriptionRejected(string reason, string code)
         {
             this.Reason = reason;
             this.Code = code;

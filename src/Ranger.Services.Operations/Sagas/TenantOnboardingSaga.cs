@@ -28,6 +28,7 @@ namespace Ranger.Services.Operations
         ISagaAction<Messages.Breadcrumbs.InitializeTenantRejected>,
         ISagaAction<NewPrimaryOwnerCreated>,
         ISagaAction<Messages.Subscriptions.NewTenantSubscriptionCreated>,
+        ISagaAction<NewTenantSubscriptionRejected>,
         ISagaAction<SendNewPrimaryOwnerEmailSent>
     {
         private readonly IBusPublisher busPublisher;
@@ -62,7 +63,7 @@ namespace Ranger.Services.Operations
             this.busPublisher.Send(new Messages.Projects.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             this.busPublisher.Send(new Messages.Breadcrumbs.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             this.busPublisher.Send(new Messages.Integrations.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            this.busPublisher.Send(new DeleteTenant("System", Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            this.busPublisher.Send(new DeleteTenant("Operations", Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 
@@ -209,6 +210,17 @@ namespace Ranger.Services.Operations
             return Task.CompletedTask;
         }
 
+        public async Task HandleAsync(NewTenantSubscriptionRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            await RejectAsync();
+        }
+
+        public Task CompensateAsync(NewTenantSubscriptionRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
+        }
     }
 
     public class UserData : BaseSagaData
