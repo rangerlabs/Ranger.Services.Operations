@@ -81,11 +81,11 @@ namespace Ranger.Services.Operations.Sagas
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             if (!string.IsNullOrWhiteSpace(message.Reason))
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-deleted", $"An error occurred deleting integration '{Data.Message.Name}'. {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-deleted", $"Failed to delete integration '{Data.Message.Name}'. {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             else
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-deleted", $"An error occurred deleting integration '{Data.Message.Name}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-deleted", $"Failed to delete integration '{Data.Message.Name}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             await RejectAsync();
         }

@@ -49,6 +49,8 @@ namespace Ranger.Services.Operations.Sagas
         public Task HandleAsync(EnforceSubscriptions message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
+            Data.TenantId = Constants.SystemTaskTenantId;
+            Data.Initiator = "SubscriptionEnforcer";
             busPublisher.Send(new ComputeTenantLimitDetails(message.TenantIds), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
@@ -67,19 +69,29 @@ namespace Ranger.Services.Operations.Sagas
         public async Task HandleAsync(ProjectResourceLimitsEnforced message, ISagaContext context)
         {
             busPublisher.Send(
-                    new EnforceGeofenceResourceLimits(Data.TenantLimitDetails.Select(tl => (tl.Item1, tl.Item2.Geofences))),
+                    new EnforceGeofenceResourceLimits(Data.TenantLimitDetails.Select(tl =>
+                        (
+                            tl.tenantId,
+                            tl.limitFields.Geofences,
+                            message.TenantRemainingProjects.Where(_ => _.tenantId == tl.tenantId).Single().remainingProjectIds
+                        ))),
                     CorrelationContext.FromId(Guid.Parse(context.SagaId))
             );
             busPublisher.Send(
-                    new EnforceIntegrationResourceLimits(Data.TenantLimitDetails.Select(tl => (tl.Item1, tl.Item2.Integrations))),
+                    new EnforceIntegrationResourceLimits(Data.TenantLimitDetails.Select(tl =>
+                        (
+                            tl.tenantId,
+                            tl.limitFields.Integrations,
+                            message.TenantRemainingProjects.Where(_ => _.tenantId == tl.tenantId).Single().remainingProjectIds
+                        ))),
                     CorrelationContext.FromId(Guid.Parse(context.SagaId))
             );
             await CompleteAsync();
         }
     }
 
-    public class EnforceSubscriptionsData
+    public class EnforceSubscriptionsData : BaseSagaData
     {
-        public IEnumerable<(string, LimitFields)> TenantLimitDetails { get; set; }
+        public IEnumerable<(string tenantId, LimitFields limitFields)> TenantLimitDetails { get; set; }
     }
 }

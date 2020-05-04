@@ -70,11 +70,11 @@ namespace Ranger.Services.Operations
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             if (!string.IsNullOrWhiteSpace(message.Reason))
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"An error occurred creating integration '{Data.Message.Name}'. {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"Failed to create integration '{Data.Message.Name}'. {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             else
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"An error occurred creating integration '{Data.Message.Name}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"Failed to create integration '{Data.Message.Name}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             await RejectAsync();
         }

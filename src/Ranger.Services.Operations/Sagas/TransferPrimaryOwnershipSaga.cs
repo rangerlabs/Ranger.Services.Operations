@@ -181,7 +181,7 @@ namespace Ranger.Services.Operations.Sagas
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Reject();
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, $"An error occured transfering the Primary Owner role: {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, $"Failed to transfer the Primary Owner role: {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 
@@ -195,7 +195,7 @@ namespace Ranger.Services.Operations.Sagas
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Reject();
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, $"An error occured transfering the Primary Owner role: {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, $"Failed to transfer the Primary Owner role: {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 

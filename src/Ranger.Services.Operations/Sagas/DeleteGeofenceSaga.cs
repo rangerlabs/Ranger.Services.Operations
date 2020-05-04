@@ -81,11 +81,11 @@ namespace Ranger.Services.Operations.Sagas
             {
                 if (!string.IsNullOrWhiteSpace(message.Reason))
                 {
-                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"An error occurred deleting geofence '{Data.Message.ExternalId}'. {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"Failed to delete geofence '{Data.Message.ExternalId}'. {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 else
                 {
-                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"An error occurred deleting geofence '{Data.Message.ExternalId}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"Failed to delete geofence '{Data.Message.ExternalId}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 await RejectAsync();
             }
