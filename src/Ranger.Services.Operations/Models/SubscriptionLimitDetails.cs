@@ -4,5 +4,6 @@ namespace Ranger.Services.Operations
     {
         public string PlanId { get; set; }
         public LimitFields Limit { get; set; }
+        public bool Active { get; set; }
     }
 }

@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AssemblyName>Ranger.Services.Operations</AssemblyName>
+    <LangVersion>Latest</LangVersion>
     <OutputType>Exe</OutputType>
     <PackageId>Ranger.Services.Operations</PackageId>
   </PropertyGroup>
@@ -14,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Autofac" Version="4.9.4" />
+    <PackageReference Include="ChargeBee" Version="2.7.9" />
     <PackageReference Include="IdentityServer4" Version="3.1.0" />
     <PackageReference Include="IdentityServer4.AspNetIdentity" Version="3.1.0" />
     <PackageReference Include="IdentityServer4.EntityFramework" Version="3.1.0" />
@@ -28,7 +30,7 @@
     <PackageReference Include="Ranger.Common" Version="2.5.3" />
     <PackageReference Include="Ranger.Monitoring" version="2.1.1" />
     <PackageReference Include="Ranger.ApiUtilities" Version="3.3.3" />
-    <PackageReference Include="Ranger.InternalHttpClient" Version="4.7.2" />
+    <PackageReference Include="Ranger.InternalHttpClient" Version="4.7.4" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ranger.Services.Operations.Data\Ranger.Services.Operations.Data.csproj" />
