@@ -6,7 +6,7 @@ using Ranger.Services.Operations.Messages.Operations;
 namespace Ranger.Services.Operations
 {
     [MessageNamespace("operations")]
-    public class UpdateSubscriptionSagaInitializer : SagaInitializer
+    public class UpdateSubscriptionSagaInitializer : SagaInitializer, ICommand
     {
         public UpdateSubscriptionSagaInitializer(string tenantId, string subscriptionId, string planId, EventTypeEnum chargeBeeSubscriptionEvent, bool active = true, DateTime? scheduledCancellationDate = null)
         {
@@ -32,7 +32,7 @@ namespace Ranger.Services.Operations
                 !(chargeBeeSubscriptionEvent is EventTypeEnum.SubscriptionScheduledCancellationRemoved)
             )
             {
-                throw new System.ArgumentException($"{nameof(chargeBeeSubscriptionEvent)} was an incorrect type. Must be SubscriptionChanged, *Paushed, or *Resumed");
+                throw new System.ArgumentException($"{nameof(chargeBeeSubscriptionEvent)} was an incorrect type.");
             }
 
             TenantId = tenantId;
