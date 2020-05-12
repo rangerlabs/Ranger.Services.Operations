@@ -103,6 +103,7 @@ namespace Ranger.Services.Operations
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.UserId = message.UserId;
+            Data.Token = message.Token;
 
             if (Data.NewRole != RolesEnum.User)
             {
@@ -165,7 +166,7 @@ namespace Ranger.Services.Operations
                 var sendNewUserEmail = new SendNewUserEmail(
                     Data.UserId,
                     Data.Message.Email,
-                    Data.FirstName,
+                    Data.Message.FirstName,
                     Data.TenantId,
                     Enum.GetName(typeof(RolesEnum), Data.NewRole),
                     Data.Token,
@@ -178,7 +179,6 @@ namespace Ranger.Services.Operations
 
     public class CreateUserData : BaseSagaData
     {
-        public string FirstName { get; set; }
         public string UserId { get; set; }
         public string Token { get; set; }
         public RolesEnum NewRole { get; set; }

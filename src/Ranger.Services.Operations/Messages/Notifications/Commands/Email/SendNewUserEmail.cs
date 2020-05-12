@@ -37,7 +37,6 @@ namespace Ranger.Services.Operations.Messages.Notifications
                 throw new System.ArgumentNullException(nameof(tenantId));
             }
 
-
             if (string.IsNullOrWhiteSpace(role))
             {
                 throw new System.ArgumentNullException(nameof(role));
