@@ -19,6 +19,7 @@ using NodaTime;
 using NodaTime.Serialization.JsonNet;
 using Ranger.ApiUtilities;
 using Ranger.InternalHttpClient;
+using Ranger.Monitoring.HealthChecks;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 
@@ -95,6 +96,11 @@ namespace Ranger.Services.Operations
                 b.UseSagaStateRepository<EntityFrameworkSagaStateRepository>();
             });
 
+            services.AddLiveHealthCheck();
+            services.AddEntityFrameworkHealthCheck<OperationsDbContext>();
+            services.AddDockerImageTagHealthCheck();
+            services.AddRabbitMQHealthCheck();
+
         }
 
         public void ConfigureContainer(ContainerBuilder builder)
@@ -119,6 +125,11 @@ namespace Ranger.Services.Operations
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHealthChecks();
+                endpoints.MapLiveTagHealthCheck();
+                endpoints.MapEfCoreTagHealthCheck();
+                endpoints.MapDockerImageTagHealthCheck();
+                endpoints.MapRabbitMQHealthCheck();
             });
 
             this.busSubscriber = app.UseRabbitMQ()
