@@ -20,10 +20,10 @@ namespace Ranger.Services.Operations.Data
             this.context = context;
         }
 
-        public async Task<EntityFrameworkSagaStateResponse> GetSagaState(SagaId id, string databaseUsername)
+        public async Task<EntityFrameworkSagaStateResponse> GetSagaState(SagaId id, string tenantId)
         {
             EntityFrameworkSagaState state = null;
-            var cachedSagaState = await context.SagaStates.FirstOrDefaultAsync(_ => _.SagaId == id && _.DatabaseUsername == databaseUsername);
+            var cachedSagaState = await context.SagaStates.FirstOrDefaultAsync(_ => _.SagaId == id && _.TenantId == tenantId);
             if (cachedSagaState != null && !String.IsNullOrWhiteSpace(cachedSagaState.Data))
             {
                 state = JsonConvert.DeserializeObject<EntityFrameworkSagaState>(cachedSagaState.Data);
@@ -59,7 +59,7 @@ namespace Ranger.Services.Operations.Data
         {
             var orderedSagaLogs = sagaLogs.OrderByDescending(_ => _.CreatedAt);
             var lastMessage = orderedSagaLogs.FirstOrDefault();
-            return lastMessage.Type is IRejectedEvent re ? re.Reason : "A reason could not be provided for the rejection of this request.";
+            return lastMessage.Type is IRejectedEvent re ? re.Reason : "A reason could not be provided for the rejection of this request";
         }
 
         private string GetPendingSagaMetrics(IEnumerable<ISagaLogData> sagaLogs)

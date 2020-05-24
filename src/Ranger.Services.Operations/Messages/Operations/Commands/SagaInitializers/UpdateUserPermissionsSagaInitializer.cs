@@ -12,26 +12,26 @@ namespace Ranger.Services.Operations.Messages.Operations
         public string Role { get; }
         public IEnumerable<Guid> AuthorizedProjects { get; }
 
-        public UpdateUserPermissionsSagaInitializer(string domain, string email, string commandingUserEmail, string role = "", IEnumerable<Guid> authorizedProjects = null)
+        public UpdateUserPermissionsSagaInitializer(string tenantId, string email, string commandingUserEmail, string role = "", IEnumerable<Guid> authorizedProjects = null)
         {
-            if (string.IsNullOrWhiteSpace(domain))
+            if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new System.ArgumentException($"{nameof(domain)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(tenantId)} was null or whitespace");
             }
 
             if (string.IsNullOrWhiteSpace(email))
             {
-                throw new System.ArgumentException($"{nameof(email)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(email)} was null or whitespace");
             }
 
             if (string.IsNullOrWhiteSpace(commandingUserEmail))
             {
-                throw new System.ArgumentException($"{nameof(commandingUserEmail)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(commandingUserEmail)} was null or whitespace");
             }
 
             this.Email = email;
             this.CommandingUserEmail = commandingUserEmail;
-            Domain = domain;
+            TenantId = tenantId;
             this.Role = role;
             this.AuthorizedProjects = authorizedProjects;
         }

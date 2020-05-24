@@ -7,10 +7,10 @@ namespace Ranger.Services.Operations.Messages.Notifications
     {
         public string Email { get; }
         public string FirstName { get; }
-        public string Domain { get; }
+        public string TenantId { get; }
         public string Token { get; }
 
-        public SendNewPrimaryOwnerEmail(string email, string firstName, string domain, string token)
+        public SendNewPrimaryOwnerEmail(string email, string firstName, string tenantId, string token)
         {
             if (string.IsNullOrWhiteSpace(email))
             {
@@ -22,9 +22,9 @@ namespace Ranger.Services.Operations.Messages.Notifications
                 throw new System.ArgumentNullException(nameof(firstName));
             }
 
-            if (string.IsNullOrWhiteSpace(domain))
+            if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new System.ArgumentNullException(nameof(domain));
+                throw new System.ArgumentNullException(nameof(tenantId));
             }
 
             if (string.IsNullOrWhiteSpace(token))
@@ -34,7 +34,7 @@ namespace Ranger.Services.Operations.Messages.Notifications
 
             this.Email = email;
             this.FirstName = firstName;
-            this.Domain = domain;
+            this.TenantId = tenantId;
             this.Token = token;
         }
     }

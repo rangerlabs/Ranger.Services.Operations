@@ -5,7 +5,7 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Ranger.Logging;
+using Ranger.Monitoring.Logging;
 using Ranger.Services.Operations.Data;
 
 namespace Ranger.Services.Operations

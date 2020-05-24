@@ -13,7 +13,7 @@ using Ranger.Services.Operations.Messages.Projects;
 
 namespace Ranger.Services.Operations.Sagas
 {
-    public class UpdateUserPermissionsSaga : BaseSaga<UpdateUserPermissionsSaga, UpdateUserData>,
+    public class UpdateUserPermissionsSaga : Saga<UpdateUserData>,
         ISagaStartAction<UpdateUserPermissionsSagaInitializer>,
         ISagaAction<UserRoleUpdated>,
         ISagaAction<UpdateUserRoleRejected>,
@@ -23,115 +23,114 @@ namespace Ranger.Services.Operations.Sagas
         const string EVENT_NAME = "user-updated";
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<UpdateUserPermissionsSaga> logger;
-        private readonly IProjectsClient projectsClient;
-        private readonly ITenantsClient tenantsClient;
+        private readonly ProjectsHttpClient projectsClient;
 
-        public UpdateUserPermissionsSaga(IBusPublisher busPublisher, IProjectsClient projectsClient, ITenantsClient tenantsClient, ILogger<UpdateUserPermissionsSaga> logger) : base(tenantsClient, logger)
+        public UpdateUserPermissionsSaga(IBusPublisher busPublisher, ProjectsHttpClient projectsClient, ILogger<UpdateUserPermissionsSaga> logger)
         {
             this.projectsClient = projectsClient;
-            this.tenantsClient = tenantsClient;
             this.logger = logger;
             this.busPublisher = busPublisher;
         }
 
-        public async Task CompensateAsync(UserRoleUpdated message, ISagaContext context)
+        public Task CompensateAsync(UserRoleUpdated message, ISagaContext context)
         {
-            await Task.Run(() => logger.LogError("Calling compensate for NewApplicationUserCreated."));
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
         public async Task CompensateAsync(UpdateUserPermissionsSagaInitializer message, ISagaContext context)
         {
             await Task.Run(() =>
             {
-                logger.LogInformation("Calling compensate for CreateNewApplicationUserSagaInitializer.");
-                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error updating user {Data.UserEmail}: {Data.RejectReason}", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Error updating user {Data.UserEmail}: {Data.RejectReason}", Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
-        public async Task CompensateAsync(UpdateUserRoleRejected message, ISagaContext context)
+        public Task CompensateAsync(UpdateUserRoleRejected message, ISagaContext context)
         {
-            await Task.Run(() =>
-               logger.LogInformation("Calling compensate for UpdateUserRoleRejected.")
-            );
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(UserProjectsUpdated message, ISagaContext context)
+        public Task CompensateAsync(UserProjectsUpdated message, ISagaContext context)
         {
-            await Task.Run(() =>
-               logger.LogInformation("Calling compensate for UserProjectsUpdated.")
-            );
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(UpdateUserProjectsRejected message, ISagaContext context)
+        public Task CompensateAsync(UpdateUserProjectsRejected message, ISagaContext context)
         {
-            await Task.Run(() =>
-               logger.LogInformation("Calling compensate for UpdateUserProjectsRejected.")
-            );
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(UserRoleUpdated message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.UserId = message.UserId;
             Data.FirstName = message.FirstName;
             if (Data.NewRole != RolesEnum.User)
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Permissions successfully updated for {Data.UserEmail}.", Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Permissions successfully updated for {Data.UserEmail}", Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 await SendPermissionsUpdatedEmail(context);
                 await SendPermissionsUpdatedPusherNotification(context);
                 await CompleteAsync();
             }
             else
             {
-                busPublisher.Send(new UpdateUserProjects(Data.Domain, Data.NewAuthorizedProjects, message.UserId, message.Email, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new UpdateUserProjects(Data.TenantId, Data.NewAuthorizedProjects, message.UserId, message.Email, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
         }
 
-        public async Task HandleAsync(UpdateUserPermissionsSagaInitializer message, ISagaContext context)
+        public Task HandleAsync(UpdateUserPermissionsSagaInitializer message, ISagaContext context)
         {
-            var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
-            Data.DatabaseUsername = databaseUsername;
-            Data.Domain = message.Domain;
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
+            Data.TenantId = message.TenantId;
             Data.UserEmail = message.Email;
             Data.Initiator = message.CommandingUserEmail;
             Data.NewAuthorizedProjects = message.AuthorizedProjects;
             Data.NewRole = Enum.Parse<RolesEnum>(message.Role);
 
             var UpdateUserRole = new UpdateUserRole(
-                message.Domain,
+                message.TenantId,
                 message.Email,
                 message.CommandingUserEmail,
                 message.Role
             );
             busPublisher.Send(UpdateUserRole, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(UpdateUserRoleRejected message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.RejectReason = message.Reason;
             await RejectAsync();
         }
 
         public async Task HandleAsync(UserProjectsUpdated message, ISagaContext context)
         {
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             var notificationText = "";
             if (message.UnSuccessfullyAddedProjectIds.Count() > 0 && message.UnSuccessfullyRemovedProjectIds.Count() > 0)
             {
-                notificationText = $"Permissions were successfully updated for {Data.UserEmail} but some projects failed be added and removed. Verify the selected projects and try again.";
+                notificationText = $"Permissions were successfully updated for {Data.UserEmail} but some projects failed be added and removed. Verify the selected projects and try again";
             }
             else if (message.UnSuccessfullyAddedProjectIds.Count() > 0)
             {
-                notificationText = $"Permissions were successfully updated for {Data.UserEmail} but some projects failed be added. Verify the selected projects and try again.";
+                notificationText = $"Permissions were successfully updated for {Data.UserEmail} but some projects failed be added. Verify the selected projects and try again";
             }
             else if (message.UnSuccessfullyRemovedProjectIds.Count() > 0)
             {
-                notificationText = $"Permissions were successfully updated for {Data.UserEmail} but some projects failed be removed. Verify the selected projects and try again.";
+                notificationText = $"Permissions were successfully updated for {Data.UserEmail} but some projects failed be removed. Verify the selected projects and try again";
             }
             else
             {
-                notificationText = $"Permissions successfully updated for {Data.UserEmail}.";
+                notificationText = $"Permissions successfully updated for {Data.UserEmail}";
             }
 
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await SendPermissionsUpdatedEmail(context);
             await SendPermissionsUpdatedPusherNotification(context);
             await CompleteAsync();
@@ -139,24 +138,23 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(UpdateUserProjectsRejected message, ISagaContext context)
         {
-            var notificationText = "The user was added to their new role but failed to set their authorized projects. Verify the selected projects and try again.";
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.Domain, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
+            var notificationText = "The user was added to their new role but failed to set their authorized projects. Verify the selected projects and try again";
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, notificationText, Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await SendPermissionsUpdatedPusherNotification(context);
             await CompleteAsync();
         }
 
         private async Task SendPermissionsUpdatedPusherNotification(ISagaContext context)
         {
-            await Task.Run(() => busPublisher.Send(new SendPusherDomainUserPredefinedNotification("PermissionsUpdated", Data.Domain, Data.UserEmail), CorrelationContext.FromId(Guid.Parse(context.SagaId))));
+            await Task.Run(() => busPublisher.Send(new SendPusherDomainUserPredefinedNotification("PermissionsUpdated", Data.TenantId, Data.UserEmail), CorrelationContext.FromId(Guid.Parse(context.SagaId))));
         }
 
         private async Task SendPermissionsUpdatedEmail(ISagaContext context)
         {
             try
             {
-                IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(Data.Domain, Data.UserEmail, Data.NewRole, Data.NewAuthorizedProjects, projectsClient).ConfigureAwait(false);
-
-                var organizationNameModel = await tenantsClient.GetTenantAsync<TenantOrganizationNameModel>(Data.Domain).ConfigureAwait(false);
+                IEnumerable<string> authorizedProjectNames = await Utilities.GetProjectNamesForAuthorizedProjectsAsync(Data.TenantId, Data.UserEmail, Data.NewRole, Data.NewAuthorizedProjects, projectsClient).ConfigureAwait(false);
 
                 await Task.Run(() =>
                 {
@@ -164,8 +162,7 @@ namespace Ranger.Services.Operations.Sagas
                         Data.UserId,
                         Data.UserEmail,
                         Data.FirstName,
-                        Data.Domain,
-                        organizationNameModel.OrganizationName,
+                        Data.TenantId,
                         Enum.GetName(typeof(RolesEnum), Data.NewRole),
                         authorizedProjectNames
                     );
@@ -174,7 +171,7 @@ namespace Ranger.Services.Operations.Sagas
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to gather necessay requirements to send updated permissions email. Permissions were updated successfully, silently failing and completing saga.");
+                logger.LogError(ex, "Failed to gather necessay requirements to send updated permissions email. Permissions were updated successfully, silently failing and completing saga");
             }
         }
     }

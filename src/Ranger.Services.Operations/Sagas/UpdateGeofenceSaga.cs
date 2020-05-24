@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
-using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Geofences;
@@ -10,52 +9,49 @@ using Ranger.Services.Operations.Messages.Operations;
 
 namespace Ranger.Services.Operations.Sagas
 {
-    public class UpsertGeofenceSaga : BaseSaga<UpsertGeofenceSaga, UpsertGeofenceData>,
+    public class UpsertGeofenceSaga : Saga<UpsertGeofenceData>,
         ISagaStartAction<UpdateGeofenceSagaInitializer>,
         ISagaAction<GeofenceUpdated>,
         ISagaAction<UpdateGeofenceRejected>
     {
         private readonly ILogger<UpsertGeofenceSaga> logger;
         private readonly IBusPublisher busPublisher;
-        private readonly ITenantsClient tenantsClient;
 
-        public UpsertGeofenceSaga(IBusPublisher busPublisher, ITenantsClient tenantsClient, ILogger<UpsertGeofenceSaga> logger) : base(tenantsClient, logger)
+        public UpsertGeofenceSaga(IBusPublisher busPublisher, ILogger<UpsertGeofenceSaga> logger)
         {
-            this.tenantsClient = tenantsClient;
             this.busPublisher = busPublisher;
             this.logger = logger;
         }
 
-        public async Task CompensateAsync(UpdateGeofenceSagaInitializer message, ISagaContext context)
+        public Task CompensateAsync(UpdateGeofenceSagaInitializer message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for UpsertGeofenceSagaInitializer.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(GeofenceUpdated message, ISagaContext context)
+        public Task CompensateAsync(GeofenceUpdated message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for GeofenceUpserted.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(UpdateGeofenceRejected message, ISagaContext context)
+        public Task CompensateAsync(UpdateGeofenceRejected message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for UpsertGeofenceRejected.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(UpdateGeofenceSagaInitializer message, ISagaContext context)
+        public Task HandleAsync(UpdateGeofenceSagaInitializer message, ISagaContext context)
         {
-            var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
-            Data.DatabaseUsername = databaseUsername;
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.FrontendRequest = message.FrontendRequest;
-            Data.Domain = message.Domain;
+            Data.TenantId = message.TenantId;
             Data.Initiator = message.CommandingUserEmailOrTokenPrefix;
             Data.ExternalId = message.ExternalId;
 
             var updateGeofence = new UpdateGeofence(
                 message.CommandingUserEmailOrTokenPrefix,
-                message.Domain,
+                message.TenantId,
                 message.Id,
                 message.ExternalId,
                 message.ProjectId,
@@ -68,20 +64,23 @@ namespace Ranger.Services.Operations.Sagas
                 message.Radius,
                 message.Enabled,
                 message.OnEnter,
+                message.OnDwell,
                 message.OnExit,
                 message.ExpirationDate,
                 message.LaunchDate,
                 message.Schedule
             );
             busPublisher.Send(updateGeofence, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(GeofenceUpdated message, ISagaContext context)
         {
-            logger.LogInformation("Calling handle for GeofenceUpdated.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             if (Data.FrontendRequest)
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-updated", $"Geofence '{Data.ExternalId}' was successfully updated.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed, message.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                //TODO: This timed out once and could happen again. determine best handline for time outs system wide.
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-updated", $"Successfully updated geofence '{Data.ExternalId}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Completed, message.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 await CompleteAsync();
             }
             else
@@ -92,16 +91,16 @@ namespace Ranger.Services.Operations.Sagas
 
         public async Task HandleAsync(UpdateGeofenceRejected message, ISagaContext context)
         {
-            logger.LogInformation("Calling handle for UpdateGeofenceRejected.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             if (Data.FrontendRequest)
             {
                 if (!string.IsNullOrWhiteSpace(message.Reason))
                 {
-                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-updated", $"An error occurred updating geofence '{Data.ExternalId}'. {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-updated", $"Failed to update geofence '{Data.ExternalId}'. {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 else
                 {
-                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-updated", $"An error occurred updating geofence '{Data.ExternalId}'.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-updated", $"Failed to update geofence '{Data.ExternalId}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 await RejectAsync();
             }

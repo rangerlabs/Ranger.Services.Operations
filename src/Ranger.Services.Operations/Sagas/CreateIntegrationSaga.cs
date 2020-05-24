@@ -2,78 +2,79 @@ using System;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
+using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Integrations;
 using Ranger.Services.Operations.Messages.Integrations.Commands;
 using Ranger.Services.Operations.Messages.Operations;
+using Ranger.Services.Operations.Messages.Subscriptions;
 
 namespace Ranger.Services.Operations
 {
-    public class CreateIntegrationSaga : BaseSaga<CreateIntegrationSaga, CreateIntegrationData>,
+    public class CreateIntegrationSaga : Saga<CreateIntegrationData>,
         ISagaStartAction<CreateIntegrationSagaInitializer>,
         ISagaAction<IntegrationCreated>,
         ISagaAction<CreateIntegrationRejected>
     {
         private readonly ILogger<CreateIntegrationSaga> logger;
         private readonly IBusPublisher busPublisher;
-        private readonly ITenantsClient tenantsClient;
 
-        public CreateIntegrationSaga(IBusPublisher busPublisher, ITenantsClient tenantsClient, ILogger<CreateIntegrationSaga> logger) : base(tenantsClient, logger)
+        public CreateIntegrationSaga(IBusPublisher busPublisher, TenantsHttpClient tenantsClient, ILogger<CreateIntegrationSaga> logger)
         {
-            this.tenantsClient = tenantsClient;
             this.busPublisher = busPublisher;
             this.logger = logger;
         }
 
-        public async Task CompensateAsync(CreateIntegrationSagaInitializer message, ISagaContext context)
+        public Task CompensateAsync(CreateIntegrationSagaInitializer message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for CreateIntegrationSagaInitializer.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(IntegrationCreated message, ISagaContext context)
+        public Task CompensateAsync(IntegrationCreated message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for IntegrationCreated.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            busPublisher.Send(new DeleteIntegration("Operations", Data.TenantId, Data.Message.Name, Data.Message.ProjectId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(CreateIntegrationRejected message, ISagaContext context)
+        public Task CompensateAsync(CreateIntegrationRejected message, ISagaContext context)
         {
-            logger.LogInformation("Calling compensate for CreateIntegrationRejected.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(CreateIntegrationSagaInitializer message, ISagaContext context)
+        public Task HandleAsync(CreateIntegrationSagaInitializer message, ISagaContext context)
         {
-            var databaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
-            Data.DatabaseUsername = databaseUsername;
-            Data.Domain = message.Domain;
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
+            Data.Message = message;
+            Data.TenantId = message.TenantId;
             Data.Initiator = message.CommandingUserEmail;
-            Data.Name = message.Name;
-
-            var createIntegration = new CreateIntegration(message.Domain, message.CommandingUserEmail, message.ProjectId, message.MessageJsonContent, message.IntegrationType);
+            var createIntegration = new CreateIntegration(Data.TenantId, Data.Message.CommandingUserEmail, Data.Message.ProjectId, Data.Message.MessageJsonContent, Data.Message.IntegrationType);
             busPublisher.Send(createIntegration, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(IntegrationCreated message, ISagaContext context)
         {
-            logger.LogInformation("Calling handle for IntegrationCreated.");
-            busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"Integration '{Data.Name}' was successfully created.", Data.Domain, Data.Initiator, OperationsStateEnum.Completed, message.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
+            Data.Id = message.Id;
+            busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"Successfully created integration '{Data.Message.Name}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Completed, Data.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             await CompleteAsync();
         }
 
         public async Task HandleAsync(CreateIntegrationRejected message, ISagaContext context)
         {
-            logger.LogInformation("Calling handle for CreateIntegrationRejected.");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             if (!string.IsNullOrWhiteSpace(message.Reason))
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"An error occurred creating integration '{Data.Name}'. {message.Reason}", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"Failed to create integration '{Data.Message.Name}'. {message.Reason}", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             else
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"An error occurred creating integration '{Data.Name}'.", Data.Domain, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("integration-created", $"Failed to create integration '{Data.Message.Name}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             await RejectAsync();
         }
@@ -81,6 +82,8 @@ namespace Ranger.Services.Operations
 
     public class CreateIntegrationData : BaseSagaData
     {
+        public CreateIntegrationSagaInitializer Message;
+        public Guid Id;
         public string Name;
     }
 }

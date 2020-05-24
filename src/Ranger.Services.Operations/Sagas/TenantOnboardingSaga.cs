@@ -8,82 +8,75 @@ using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Identity;
 using Ranger.Services.Operations.Messages.Notifications;
+using Ranger.Services.Operations.Messages.Subscriptions;
 using Ranger.Services.Operations.Messages.Tenants;
 using Ranger.Services.Operations.Messages.Tenants.Commands;
 
 namespace Ranger.Services.Operations
 {
-    //This is the one time not to use a SagaInitializer because DatabaseUsername has not yet been assigned 
+    //This is the one time not to use a SagaInitializer because TenantId has not yet been assigned 
     //and a SagaState cannot be persisted as a result of the database constraint
-    public class TenantOnboardingSaga : BaseSaga<TenantOnboardingSaga, UserData>,
+    public class TenantOnboardingSaga : Saga<UserData>,
         ISagaStartAction<Messages.Tenants.TenantCreated>,
         ISagaAction<Messages.Identity.TenantInitialized>,
         ISagaAction<Messages.Projects.TenantInitialized>,
         ISagaAction<Messages.Integrations.TenantInitialized>,
+        ISagaAction<Messages.Breadcrumbs.TenantInitialized>,
         ISagaAction<Messages.Identity.InitializeTenantRejected>,
         ISagaAction<Messages.Projects.InitializeTenantRejected>,
         ISagaAction<Messages.Integrations.InitializeTenantRejected>,
+        ISagaAction<Messages.Breadcrumbs.InitializeTenantRejected>,
         ISagaAction<NewPrimaryOwnerCreated>,
+        ISagaAction<Messages.Subscriptions.NewTenantSubscriptionCreated>,
+        ISagaAction<NewTenantSubscriptionRejected>,
         ISagaAction<SendNewPrimaryOwnerEmailSent>
     {
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<TenantOnboardingSaga> logger;
-        private readonly ITenantsClient tenantsClient;
 
-        public TenantOnboardingSaga(IBusPublisher busPublisher, ITenantsClient tenantsClient, ILogger<TenantOnboardingSaga> logger) : base(tenantsClient, logger)
+        public TenantOnboardingSaga(IBusPublisher busPublisher, ILogger<TenantOnboardingSaga> logger)
         {
-            this.tenantsClient = tenantsClient;
             this.busPublisher = busPublisher;
             this.logger = logger;
         }
 
-        public async Task HandleAsync(TenantCreated message, ISagaContext context)
+        public Task HandleAsync(TenantCreated message, ISagaContext context)
         {
-            await Task.Run(() =>
-            {
-                Data.Token = message.Token;
-                Data.Domain = message.Domain;
-                Data.Initiator = message.Email;
-                Data.FirstName = message.FirstName;
-                Data.LastName = message.LastName;
-                Data.Password = message.Password;
-                Data.OrganizationName = message.OrganizationName;
-                Data.DatabaseUsername = message.DatabaseUsername;
-                Data.DatabasePassword = message.DatabasePassword;
-                this.busPublisher.Send(new Messages.Identity.InitializeTenant(message.DatabaseUsername, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
+            Data.Token = message.Token;
+            Data.TenantId = message.TenantId;
+            Data.Initiator = message.Email;
+            Data.FirstName = message.FirstName;
+            Data.LastName = message.LastName;
+            Data.Password = message.Password;
+            Data.OrganizationName = message.OrganizationName;
+            Data.TenantId = message.TenantId;
+            Data.DatabasePassword = message.DatabasePassword;
+            this.busPublisher.Send(new Messages.Identity.InitializeTenant((string)message.TenantId, message.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(TenantCreated message, ISagaContext context)
+        public Task CompensateAsync(TenantCreated message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            logger.LogDebug("Dropping tenant.");
-            await Task.Run(() =>
-            {
-                this.busPublisher.Send(new Messages.Identity.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                this.busPublisher.Send(new Messages.Projects.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                this.busPublisher.Send(new Messages.Integrations.DropTenant(Data.DatabaseUsername), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
-            await Task.CompletedTask;
-            await Task.Run(() =>
-               this.busPublisher.Send(
-                   new DeleteTenant("System", Data.Domain),
-                   CorrelationContext.FromId(Guid.Parse(context.SagaId))
-               )
-            );
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            logger.LogDebug("Dropping tenant");
+            this.busPublisher.Send(new Messages.Identity.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            this.busPublisher.Send(new Messages.Projects.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            this.busPublisher.Send(new Messages.Breadcrumbs.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            this.busPublisher.Send(new Messages.Integrations.DropTenant(Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            this.busPublisher.Send(new DeleteTenant("Operations", Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(Messages.Identity.TenantInitialized message, ISagaContext context)
+        public Task HandleAsync(Messages.Identity.TenantInitialized message, ISagaContext context)
         {
-            await Task.Run(() =>
-               this.busPublisher.Send(new Messages.Projects.InitializeTenant(Data.DatabaseUsername, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)))
-            );
+            this.busPublisher.Send(new Messages.Projects.InitializeTenant(Data.TenantId, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(Messages.Identity.TenantInitialized message, ISagaContext context)
+        public Task CompensateAsync(Messages.Identity.TenantInitialized message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(Messages.Identity.InitializeTenantRejected message, ISagaContext context)
@@ -91,23 +84,34 @@ namespace Ranger.Services.Operations
             await RejectAsync();
         }
 
-        public async Task CompensateAsync(Messages.Identity.InitializeTenantRejected message, ISagaContext context)
+        public Task CompensateAsync(Messages.Identity.InitializeTenantRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(NewPrimaryOwnerCreated message, ISagaContext context)
         {
             await Task.Run(() =>
             {
-                busPublisher.Send(new SendNewPrimaryOwnerEmail(Data.Initiator, Data.FirstName, Data.Domain, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new CreateNewTenantSubscription(Data.TenantId, Data.Initiator, Data.FirstName, Data.LastName, Data.OrganizationName), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             });
         }
 
-        public async Task CompensateAsync(NewPrimaryOwnerCreated message, ISagaContext context)
+        public Task CompensateAsync(NewPrimaryOwnerCreated message, ISagaContext context)
         {
-            await Task.CompletedTask;
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(NewTenantSubscriptionCreated message, ISagaContext context)
+        {
+            busPublisher.Send(new SendNewPrimaryOwnerEmail(Data.Initiator, Data.FirstName, Data.TenantId, Data.Token), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
+        }
+
+        public Task CompensateAsync(NewTenantSubscriptionCreated message, ISagaContext context)
+        {
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(SendNewPrimaryOwnerEmailSent message, ISagaContext context)
@@ -115,17 +119,17 @@ namespace Ranger.Services.Operations
             busPublisher.Send<SendPusherDomainFrontendNotification>(
                 new SendPusherDomainFrontendNotification(
                     "TenantOnboarding",
-                    Data.Domain,
+                    Data.TenantId,
                     OperationsStateEnum.Completed),
                 CorrelationContext.FromId(Guid.Parse(context.SagaId)));
 
-            logger.LogInformation("TenantUserSignup saga completed succesfully.");
+            logger.LogInformation("TenantUserSignup saga completed succesfully");
             await CompleteAsync();
         }
 
-        public async Task CompensateAsync(SendNewPrimaryOwnerEmailSent message, ISagaContext context)
+        public Task CompensateAsync(SendNewPrimaryOwnerEmailSent message, ISagaContext context)
         {
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(Messages.Projects.InitializeTenantRejected message, ISagaContext context)
@@ -133,10 +137,21 @@ namespace Ranger.Services.Operations
             await RejectAsync();
         }
 
-        public async Task CompensateAsync(Messages.Projects.InitializeTenantRejected message, ISagaContext context)
+        public Task CompensateAsync(Messages.Projects.InitializeTenantRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(Messages.Breadcrumbs.InitializeTenantRejected message, ISagaContext context)
+        {
+            await RejectAsync();
+        }
+
+        public Task CompensateAsync(Messages.Breadcrumbs.InitializeTenantRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
@@ -144,47 +159,67 @@ namespace Ranger.Services.Operations
             await RejectAsync();
         }
 
-        public async Task CompensateAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
+        public Task CompensateAsync(Messages.Integrations.InitializeTenantRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
+        public Task HandleAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
         {
-            await Task.Run(() =>
-            {
-                this.busPublisher.Send(new Messages.Integrations.InitializeTenant(Data.DatabaseUsername, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            });
+            this.busPublisher.Send(new Messages.Breadcrumbs.InitializeTenant(Data.TenantId, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
+        public Task CompensateAsync(Messages.Projects.TenantInitialized message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
+        public Task HandleAsync(Messages.Breadcrumbs.TenantInitialized message, ISagaContext context)
         {
-            await Task.Run(() =>
-            {
-                this.busPublisher.Send(
-                    new CreateNewPrimaryOwner(
-                        Data.Initiator,
-                        Data.FirstName,
-                        Data.LastName,
-                        Data.Password,
-                        Data.Domain
-                    ),
-                    CorrelationContext.FromId(Guid.Parse(context.SagaId))
-                );
-            }); ;
+            this.busPublisher.Send(new Messages.Integrations.InitializeTenant(Data.TenantId, Data.DatabasePassword), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
         }
 
-        public async Task CompensateAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
+        public Task CompensateAsync(Messages.Breadcrumbs.TenantInitialized message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
-            await Task.CompletedTask;
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
+        {
+            this.busPublisher.Send(
+                new CreateNewPrimaryOwner(
+                    Data.Initiator,
+                    Data.FirstName,
+                    Data.LastName,
+                    Data.Password,
+                    Data.TenantId
+                ),
+                CorrelationContext.FromId(Guid.Parse(context.SagaId))
+            );
+            return Task.CompletedTask;
+        }
+
+        public Task CompensateAsync(Messages.Integrations.TenantInitialized message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(NewTenantSubscriptionRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            await RejectAsync();
+        }
+
+        public Task CompensateAsync(NewTenantSubscriptionRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
         }
     }
 

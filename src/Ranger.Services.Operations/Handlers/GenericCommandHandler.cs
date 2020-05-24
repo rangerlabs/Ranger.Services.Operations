@@ -31,11 +31,11 @@ namespace Ranger.Services.Operations
             }
             catch (NotImplementedException ex)
             {
-                logger.LogError(ex, "A Chronicle method was not implemented.");
+                logger.LogError(ex, "A Chronicle method was not implemented");
             }
             catch (ChronicleException)
             {
-                logger.LogError(sagaContext.SagaContextError.Exception, "An exception was thrown resulting in a saga rejection. Ack'ing message.");
+                logger.LogError(sagaContext.SagaContextError.Exception, "An exception was thrown resulting in a saga rejection. Ack'ing message");
             }
         }
     }

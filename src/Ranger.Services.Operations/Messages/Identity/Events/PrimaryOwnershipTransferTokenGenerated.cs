@@ -10,9 +10,8 @@ namespace Ranger.Services.Operations
         {
             if (string.IsNullOrWhiteSpace(token))
             {
-                throw new System.ArgumentException($"{nameof(token)} was null or whitespace.");
+                throw new System.ArgumentException($"{nameof(token)} was null or whitespace");
             }
-
             Token = token;
         }
     }

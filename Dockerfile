@@ -36,7 +36,8 @@ COPY --from=restore /app/vsdbg ./vsdbg
 ARG BUILD_CONFIG="Release"
 ARG ASPNETCORE_ENVIRONMENT="Production"
 ENV ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-
+ARG DOCKER_IMAGE_TAG="NO_TAG"
+ENV DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}
 ENV DEBIAN_FRONTEND noninteractive
 RUN if [ "${BUILD_CONFIG}" = "Debug" ]; then \
     apt-get update && \
@@ -44,5 +45,5 @@ RUN if [ "${BUILD_CONFIG}" = "Debug" ]; then \
     fi
 ENV DEBIAN_FRONTEND teletype
 
-EXPOSE 8086
+EXPOSE 8083
 ENTRYPOINT ["dotnet", "Ranger.Services.Operations.dll"]

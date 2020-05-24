@@ -7,14 +7,14 @@ namespace Ranger.Services.Operations
     public class SendPusherDomainUserPredefinedNotification : ICommand
     {
         public string BackendEventKey { get; }
-        public string Domain { get; }
+        public string TenantId { get; }
         public string UserEmail { get; }
         public OperationsStateEnum State { get; }
 
-        public SendPusherDomainUserPredefinedNotification(string backendEventKey, string domain, string userEmail, OperationsStateEnum state = OperationsStateEnum.Completed)
+        public SendPusherDomainUserPredefinedNotification(string backendEventKey, string tenantId, string userEmail, OperationsStateEnum state = OperationsStateEnum.Completed)
         {
             this.BackendEventKey = backendEventKey;
-            this.Domain = domain;
+            this.TenantId = tenantId;
             this.UserEmail = userEmail;
             this.State = state;
         }

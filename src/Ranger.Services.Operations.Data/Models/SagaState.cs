@@ -9,7 +9,7 @@ namespace Ranger.Services.Operations.Data
         public string SagaId { get; set; }
 
         [Required]
-        public string DatabaseUsername { get; set; }
+        public string TenantId { get; set; }
 
         [Required]
         public string SagaType { get; set; }

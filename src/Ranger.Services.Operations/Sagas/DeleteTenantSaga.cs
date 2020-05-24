@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using AutoWrapper.Wrappers;
 using Chronicle;
 using Microsoft.Extensions.Logging;
 using Ranger.Common;
@@ -13,19 +14,17 @@ using Ranger.Services.Operations.Messages.Tenants.RejectedEvents;
 
 namespace Ranger.Services.Operations.Sagas
 {
-    public class DeleteTenantSaga : BaseSaga<DeleteTenantSaga, DeleteTenantData>,
+    public class DeleteTenantSaga : Saga<DeleteTenantData>,
         ISagaStartAction<DeleteTenantSagaInitializer>,
         ISagaAction<TenantDeleted>,
         ISagaAction<DeleteTenantRejected>
     {
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<DeleteTenantSaga> logger;
-        private readonly ITenantsClient tenantsClient;
-        private readonly IIdentityClient identityClient;
+        private readonly IdentityHttpClient identityClient;
 
-        public DeleteTenantSaga(IBusPublisher busPublisher, ITenantsClient tenantsClient, IIdentityClient identityClient, ILogger<DeleteTenantSaga> logger) : base(tenantsClient, logger)
+        public DeleteTenantSaga(IBusPublisher busPublisher, IdentityHttpClient identityClient, ILogger<DeleteTenantSaga> logger)
         {
-            this.tenantsClient = tenantsClient;
             this.identityClient = identityClient;
             this.busPublisher = busPublisher;
             this.logger = logger;
@@ -33,37 +32,48 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task CompensateAsync(DeleteTenantSagaInitializer message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(TenantDeleted message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
         public Task CompensateAsync(DeleteTenantRejected message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'.");
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
             return Task.CompletedTask;
         }
 
+        //TODO: How to handle retries in these handlers?
         public async Task HandleAsync(DeleteTenantSagaInitializer message, ISagaContext context)
         {
-            Data.DatabaseUsername = await GetPgsqlDatabaseUsernameOrReject(message);
             try
             {
-                Data.OwnerUser = await identityClient.GetUserAsync<User>(message.Domain, message.CommandingUserEmail);
+                Data.TenantId = message.TenantId;
+                RangerApiResponse<User> apiResponse = null;
+                try
+                {
+                    apiResponse = await identityClient.GetUserAsync<User>(message.TenantId, message.CommandingUserEmail);
+                }
+                catch (ApiException ex)
+                {
+                    logger.LogError(ex, "Failed to retrieve the Primary Owner when attempting Primary Ownership transfer");
+                    await RejectAsync();
+                }
+                Data.OwnerUser = apiResponse.Result;
+                Data.Initiator = message.CommandingUserEmail;
+                Data.TenantId = message.TenantId;
+                busPublisher.Send(new DeleteTenant(message.CommandingUserEmail, message.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
-            catch (Exception ex)
+            catch (ApiException)
             {
-                logger.LogError(ex, "Failed to retrieve the Primary Owner when attempting Primary Ownership transfer.");
+                logger.LogError("Failed to retrieve the Primary Owner when attempting Primary Ownership transfer");
                 await RejectAsync();
             }
-            Data.Initiator = message.CommandingUserEmail;
-            Data.Domain = message.Domain;
-            busPublisher.Send(new DeleteTenant(message.CommandingUserEmail, message.Domain), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
         }
 
         public Task HandleAsync(TenantDeleted message, ISagaContext context)
@@ -74,7 +84,7 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task HandleAsync(DeleteTenantRejected message, ISagaContext context)
         {
-            logger.LogError($"Failed to delete tenant domain '{Data.Domain}'.");
+            logger.LogError($"Failed to delete tenant domain '{Data.TenantId}'");
             return Task.CompletedTask;
         }
     }
