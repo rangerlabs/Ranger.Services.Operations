@@ -88,7 +88,9 @@ namespace Ranger.Services.Operations
                 });
 
             services.AddDataProtection()
+                .SetApplicationName("Operations")
                 .ProtectKeysWithCertificate(new X509Certificate2(configuration["DataProtectionCertPath:Path"]))
+                .UnprotectKeysWithAnyCertificate(new X509Certificate2(configuration["DataProtectionCertPath:Path"]))
                 .PersistKeysToDbContext<OperationsDbContext>();
 
             services.AddChronicle(b =>
