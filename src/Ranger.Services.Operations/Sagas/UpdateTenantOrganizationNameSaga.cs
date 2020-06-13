@@ -67,7 +67,7 @@ namespace Ranger.Services.Operations.Sagas
             Data.OrganizationName = message.OrganizationName;
             Data.Domain = message.Domain;
 
-            var updateIntegration = new UpdateTenantOrganization(message.TenantId, message.CommandingUserEmail, message.Version, message.OrganizationName, message.Domain);
+            var updateIntegration = new UpdateTenantOrganization(message.CommandingUserEmail, message.TenantId, message.Version, message.OrganizationName, message.Domain);
             busPublisher.Send(updateIntegration, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
@@ -119,11 +119,11 @@ namespace Ranger.Services.Operations.Sagas
             if (Data.DomainWasUpdated)
             {
                 busPublisher.Send(new SendTenantDomainUpdatedEmails(Data.TenantId, Data.Domain, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                busPublisher.Send(new SendPusherDomainCustomNotification("organization-domain-updated", $"Your organization details were updated and your new domain is '{Data.Domain}'. You will now be redirected to login using your new domain.", Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainCustomNotification("organization-domain-updated", $"Your organization details were updated and your new domain is '{Data.Domain}'. You will be redirected to login using your new domain.", Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             else
             {
-                busPublisher.Send(new SendPusherDomainCustomNotification("organization-updated", $"Successfully updated the organization name", Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("organization-updated", $"Successfully updated the organization name", Data.TenantId, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
         }
     }
