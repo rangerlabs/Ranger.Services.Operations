@@ -76,7 +76,7 @@ namespace Ranger.Services.Operations.Sagas
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.DomainWasUpdated = message.DomainWasUpdated;
-            busPublisher.Send(new UpdateTenantSubscriptionOrganization(Data.TenantId, message.OrganizationName, message.Domain), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new UpdateTenantSubscriptionOrganization(Data.TenantId, message.OrganizationName), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 
@@ -102,10 +102,13 @@ namespace Ranger.Services.Operations.Sagas
             return Task.CompletedTask;
         }
 
+        // Completing this saga on a Rejected even is an intentional design decision. The rational is as follows:
+        // Updating the company name in Chargebee can be corrected through the chargebee UI if needed and should not "Reject"
+        // the saga in the usual sense. The Subscription handler will publish a Rejected even if it fails to update and will 
+        // publish an updated event if it succeeds. Neither event will detrimentally not affect the customer.
         public Task HandleAsync(UpdateTenantSubscriptionOrganizationRejected message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
-            logger.LogError("Failed to update the Chargebee subscription organization for TenantId {TenantId}. Expected the new domain to be {Domain} and the new Organization Name to be {OrganizationName}", Data.TenantId, Data.Domain, Data.OrganizationName);
             SendOrganizationUpdatedNotifications(context);
             Complete();
             return Task.CompletedTask;
@@ -113,10 +116,14 @@ namespace Ranger.Services.Operations.Sagas
 
         private void SendOrganizationUpdatedNotifications(ISagaContext context)
         {
-            busPublisher.Send(new SendPusherDomainCustomNotification("organization-updated", $"Successfully updated your organization details", Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             if (Data.DomainWasUpdated)
             {
                 busPublisher.Send(new SendTenantDomainUpdatedEmails(Data.TenantId, Data.Domain, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainCustomNotification("organization-domain-updated", $"Your organization details were updated and your new domain is '{Data.Domain}'. You will now be redirected to login using your new domain.", Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            }
+            else
+            {
+                busPublisher.Send(new SendPusherDomainCustomNotification("organization-updated", $"Successfully updated the organization name", Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
         }
     }

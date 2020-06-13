@@ -6,9 +6,8 @@ namespace Ranger.Services.Operations.Messages.Subscriptions.Commands
     public class UpdateTenantSubscriptionOrganization : ICommand
     {
         public string TenantId { get; }
-        public string Domain { get; }
         public string OrganizationName { get; }
-        public UpdateTenantSubscriptionOrganization(string tenantId, string organizationName, string domain)
+        public UpdateTenantSubscriptionOrganization(string tenantId, string organizationName)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
             {
@@ -20,14 +19,8 @@ namespace Ranger.Services.Operations.Messages.Subscriptions.Commands
                 throw new System.ArgumentException($"'{nameof(organizationName)}' cannot be null or whitespace", nameof(organizationName));
             }
 
-            if (string.IsNullOrWhiteSpace(domain))
-            {
-                throw new System.ArgumentException($"'{nameof(domain)}' cannot be null or whitespace", nameof(domain));
-            }
-
             this.TenantId = tenantId;
             this.OrganizationName = organizationName;
-            this.Domain = domain;
         }
     }
 }
