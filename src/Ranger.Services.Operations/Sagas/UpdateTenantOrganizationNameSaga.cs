@@ -76,6 +76,7 @@ namespace Ranger.Services.Operations.Sagas
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.DomainWasUpdated = message.DomainWasUpdated;
+            Data.OldDomain = message.OldDomain;
             busPublisher.Send(new UpdateTenantSubscriptionOrganization(Data.TenantId, message.OrganizationName), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
@@ -119,7 +120,7 @@ namespace Ranger.Services.Operations.Sagas
             if (Data.DomainWasUpdated)
             {
                 busPublisher.Send(new SendTenantDomainUpdatedEmails(Data.TenantId, Data.Domain, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                busPublisher.Send(new SendPusherDomainCustomNotification("organization-domain-updated", $"Your organization details were updated and your new domain is '{Data.Domain}'. You will be redirected to login using your new domain.", Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherOrganizationDomainUpdatedNotification("organization-domain-updated", $"Your organization details were updated and your new domain is '{Data.Domain}'. You will be redirected to login using your new domain.", Data.OldDomain), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             else
             {
@@ -133,5 +134,6 @@ namespace Ranger.Services.Operations.Sagas
         public string OrganizationName;
         public string Domain;
         public bool DomainWasUpdated;
+        public string OldDomain;
     }
 }
