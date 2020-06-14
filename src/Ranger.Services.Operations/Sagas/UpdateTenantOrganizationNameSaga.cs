@@ -120,7 +120,7 @@ namespace Ranger.Services.Operations.Sagas
             if (Data.DomainWasUpdated)
             {
                 busPublisher.Send(new SendTenantDomainUpdatedEmails(Data.TenantId, Data.Domain, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-                busPublisher.Send(new SendPusherOrganizationDomainUpdatedNotification("organization-domain-updated", $"Your organization details were updated and your new domain is '{Data.Domain}'. You will be redirected to login using your new domain.", Data.OldDomain), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherOrganizationDomainUpdatedNotification("organization-domain-updated", $"Your organization details were updated and your new domain is '{Data.Domain}'. You will be redirected to login using your new domain.", Data.OldDomain, Data.Domain), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             else
             {
