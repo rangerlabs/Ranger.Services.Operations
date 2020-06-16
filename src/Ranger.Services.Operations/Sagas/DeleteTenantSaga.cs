@@ -8,6 +8,9 @@ using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Messages.Notifications;
 using Ranger.Services.Operations.Messages.Operations;
+using Ranger.Services.Operations.Messages.Subscriptions.Commands;
+using Ranger.Services.Operations.Messages.Subscriptions.Events;
+using Ranger.Services.Operations.Messages.Subscriptions.RejectedEvents;
 using Ranger.Services.Operations.Messages.Tenants.Commands;
 using Ranger.Services.Operations.Messages.Tenants.Events;
 using Ranger.Services.Operations.Messages.Tenants.RejectedEvents;
@@ -16,6 +19,8 @@ namespace Ranger.Services.Operations.Sagas
 {
     public class DeleteTenantSaga : Saga<DeleteTenantData>,
         ISagaStartAction<DeleteTenantSagaInitializer>,
+        ISagaAction<TenantSubscriptionCancelled>,
+        ISagaAction<CancelTenantSubscriptionRejected>,
         ISagaAction<TenantDeleted>,
         ISagaAction<DeleteTenantRejected>
     {
@@ -48,16 +53,35 @@ namespace Ranger.Services.Operations.Sagas
             return Task.CompletedTask;
         }
 
+        public Task CompensateAsync(TenantSubscriptionCancelled message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
+        }
+
+        public Task CompensateAsync(CancelTenantSubscriptionRejected message, ISagaContext context)
+        {
+            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            return Task.CompletedTask;
+        }
+
         //TODO: How to handle retries in these handlers?
-        public async Task HandleAsync(DeleteTenantSagaInitializer message, ISagaContext context)
+        public Task HandleAsync(DeleteTenantSagaInitializer message, ISagaContext context)
+        {
+            Data.TenantId = message.TenantId;
+            Data.Initiator = message.CommandingUserEmail;
+            busPublisher.Send(new CancelTenantSubscription(message.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(TenantSubscriptionCancelled message, ISagaContext context)
         {
             try
             {
-                Data.TenantId = message.TenantId;
                 RangerApiResponse<User> apiResponse = null;
                 try
                 {
-                    apiResponse = await identityClient.GetUserAsync<User>(message.TenantId, message.CommandingUserEmail);
+                    apiResponse = await identityClient.GetUserAsync<User>(message.TenantId, Data.Initiator);
                 }
                 catch (ApiException ex)
                 {
@@ -65,9 +89,9 @@ namespace Ranger.Services.Operations.Sagas
                     await RejectAsync();
                 }
                 Data.OwnerUser = apiResponse.Result;
-                Data.Initiator = message.CommandingUserEmail;
+                Data.Initiator = Data.Initiator;
                 Data.TenantId = message.TenantId;
-                busPublisher.Send(new DeleteTenant(message.CommandingUserEmail, message.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new DeleteTenant(Data.Initiator, message.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             }
             catch (ApiException)
             {
@@ -84,7 +108,13 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task HandleAsync(DeleteTenantRejected message, ISagaContext context)
         {
-            logger.LogError($"Failed to delete tenant domain '{Data.TenantId}'");
+            logger.LogError("Failed to delete tenant with Tenant Id {TenantID}", Data.TenantId);
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(CancelTenantSubscriptionRejected message, ISagaContext context)
+        {
+            logger.LogError("Failed to cancel tenant subscription for Tenant Id {TenantID}", Data.TenantId);
             return Task.CompletedTask;
         }
     }
