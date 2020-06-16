@@ -65,7 +65,7 @@ namespace Ranger.Services.Operations.Sagas
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             if (Data.Message.FrontendRequest)
             {
-                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"Successfully created geofence '{Data.Message.ExternalId}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                busPublisher.Send(new SendPusherDomainUserCustomNotification("geofence-deleted", $"Successfully deleted geofence '{Data.Message.ExternalId}'", Data.TenantId, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 await CompleteAsync();
             }
             else
