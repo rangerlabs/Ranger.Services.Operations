@@ -6,7 +6,6 @@ services:
         ports:
             - '8083:8083'
         networks:
-            - operations
             - ranger
 
 networks:
@@ -14,6 +13,3 @@ networks:
         name: ranger-network
         external: true
 
-    operations:
-        name: operations-network
-        external: true
