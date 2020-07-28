@@ -54,7 +54,8 @@ namespace Ranger.Services.Operations
                      options.SerializerSettings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
                  });
 
-            services.AddAutoWrapper();
+            services.AddRangerApiVersioning();
+            services.ConfigureAutoWrapperModelStateResponseFactory();
             services.AddSwaggerGen("Operations API", "v1");
 
             services.AddAuthorization(options =>
