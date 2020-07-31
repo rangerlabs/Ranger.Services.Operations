@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Ranger.Common;
 using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations.Messages.Operations
@@ -9,10 +10,10 @@ namespace Ranger.Services.Operations.Messages.Operations
     {
         public string Email { get; }
         public string CommandingUserEmail { get; }
-        public string Role { get; }
+        public RolesEnum Role { get; }
         public IEnumerable<Guid> AuthorizedProjects { get; }
 
-        public UpdateUserPermissionsSagaInitializer(string tenantId, string email, string commandingUserEmail, string role = "", IEnumerable<Guid> authorizedProjects = null)
+        public UpdateUserPermissionsSagaInitializer(string tenantId, string email, string commandingUserEmail, RolesEnum role, IEnumerable<Guid> authorizedProjects = null)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
             {

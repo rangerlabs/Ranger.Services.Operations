@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Ranger.Common;
 using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations
@@ -11,11 +12,11 @@ namespace Ranger.Services.Operations
         public string Email { get; }
         public string FirstName { get; }
         public string LastName { get; }
-        public string Role { get; }
+        public RolesEnum Role { get; }
         public string CommandingUserEmail { get; }
         public IEnumerable<Guid> PermittedProjectIds { get; }
 
-        public CreateUser(string tenantId, string email, string firstName, string lastName, string role, string commandingUserEmail, IEnumerable<Guid> permittedProjectIds)
+        public CreateUser(string tenantId, string email, string firstName, string lastName, RolesEnum role, string commandingUserEmail, IEnumerable<Guid> permittedProjectIds)
         {
             if (string.IsNullOrEmpty(tenantId))
             {
@@ -35,11 +36,6 @@ namespace Ranger.Services.Operations
             if (string.IsNullOrEmpty(lastName))
             {
                 throw new System.ArgumentException($"{nameof(lastName)} was null or whitespace");
-            }
-
-            if (string.IsNullOrEmpty(role))
-            {
-                throw new System.ArgumentException($"{nameof(role)} was null or whitespace");
             }
 
             if (string.IsNullOrEmpty(commandingUserEmail))

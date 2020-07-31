@@ -90,7 +90,7 @@ namespace Ranger.Services.Operations.Sagas
             Data.UserEmail = message.Email;
             Data.Initiator = message.CommandingUserEmail;
             Data.NewAuthorizedProjects = message.AuthorizedProjects;
-            Data.NewRole = Enum.Parse<RolesEnum>(message.Role);
+            Data.NewRole = message.Role;
 
             var UpdateUserRole = new UpdateUserRole(
                 message.TenantId,

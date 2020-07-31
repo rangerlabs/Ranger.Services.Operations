@@ -136,7 +136,7 @@ namespace Ranger.Services.Operations
             Data.TenantId = message.TenantId;
             Data.Message = message;
             Data.Initiator = message.CommandingUserEmail;
-            Data.NewRole = Enum.Parse<RolesEnum>(message.Role);
+            Data.NewRole = message.Role;
             var createNewUser = new CreateUser(
                          Data.TenantId,
                          Data.Message.Email,
