@@ -122,8 +122,6 @@ namespace Ranger.Services.Operations
         {
             this.loggerFactory = loggerFactory;
 
-            applicationLifetime.ApplicationStopping.Register(OnShutdown);
-
             app.UseSwagger("v1", "Operations API");
             app.UseAutoWrapper();
             app.UseRouting();
@@ -138,13 +136,8 @@ namespace Ranger.Services.Operations
                 endpoints.MapRabbitMQHealthCheck();
             });
 
-            this.busSubscriber = app.UseRabbitMQ()
+            this.busSubscriber = app.UseRabbitMQ(applicationLifetime)
                 .SubscribeAllMessages();
-        }
-
-        private void OnShutdown()
-        {
-            this.busSubscriber.Dispose();
         }
     }
 }
