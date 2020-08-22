@@ -7,10 +7,10 @@ namespace Ranger.Services.Operations.Messages.Integrations
     public class IntegrationDeleted : IEvent
     {
         public string TenantId { get; }
-        public Guid IntegrationId { get; }
+        public Guid Id { get; }
         public string Name { get; }
 
-        public IntegrationDeleted(string tenantId, Guid integrationId, string name)
+        public IntegrationDeleted(string tenantId, Guid id, string name)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
             {
@@ -22,7 +22,7 @@ namespace Ranger.Services.Operations.Messages.Integrations
             }
 
             this.TenantId = tenantId;
-            this.IntegrationId = integrationId;
+            this.Id = id;
             this.Name = name;
         }
     }

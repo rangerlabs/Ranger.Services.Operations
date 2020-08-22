@@ -72,7 +72,7 @@ namespace Ranger.Services.Operations.Sagas
         public Task HandleAsync(IntegrationDeleted message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
-            busPublisher.Send(new PurgeIntegrationFromGeofences(Data.TenantId, Data.Message.ProjectId, message.IntegrationId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new PurgeIntegrationFromGeofences(Data.TenantId, Data.Message.ProjectId, message.Id), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 
