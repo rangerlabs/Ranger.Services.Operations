@@ -20,7 +20,7 @@ namespace Ranger.Services.Operations
             }
             else
             {
-                authorizedProjectNames = apiResponse.Result.Where(_ => authorizedProjects.Contains(_.ProjectId)).Select(_ => _.Name);
+                authorizedProjectNames = apiResponse.Result.Where(_ => authorizedProjects.Contains(_.Id)).Select(_ => _.Name);
             }
 
             return authorizedProjectNames;
