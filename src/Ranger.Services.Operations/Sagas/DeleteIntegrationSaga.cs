@@ -2,15 +2,12 @@ using System;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
-using Ranger.Common;
-using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Geofences;
 using Ranger.Services.Operations.Messages.Geofences.Events;
 using Ranger.Services.Operations.Messages.Integrations;
 using Ranger.Services.Operations.Messages.Operations;
-using Ranger.Services.Operations.Messages.Subscriptions;
 
 namespace Ranger.Services.Operations.Sagas
 {
