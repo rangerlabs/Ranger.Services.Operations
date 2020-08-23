@@ -1,19 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using AutoWrapper.Wrappers;
 using Chronicle;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
-using Ranger.Services.Operations.Data;
-using Ranger.Services.Operations.Messages.Notifications;
-using Ranger.Services.Operations.Messages.Operations;
 using Ranger.Services.Operations.Messages.Projects;
-using Ranger.Services.Operations.Messages.Subscriptions;
 
 namespace Ranger.Services.Operations
 {
@@ -74,7 +65,7 @@ namespace Ranger.Services.Operations
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             busPublisher.Send(new UpdateUserProjects(Data.TenantId, new Guid[0], message.UserId, message.Email, message.Email), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Successfully deleted account", Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Successfully deleted account", Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
         }
 

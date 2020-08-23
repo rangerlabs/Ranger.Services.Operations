@@ -1,19 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using AutoWrapper.Wrappers;
 using Chronicle;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
-using Ranger.Services.Operations.Data;
-using Ranger.Services.Operations.Messages.Notifications;
-using Ranger.Services.Operations.Messages.Operations;
 using Ranger.Services.Operations.Messages.Projects;
-using Ranger.Services.Operations.Messages.Subscriptions;
 
 namespace Ranger.Services.Operations
 {
@@ -63,7 +54,7 @@ namespace Ranger.Services.Operations
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.Email = message.Email;
-            Data.Initiator = message.Email;
+            Data.Initiator = message.CommandingUserEmail;
             Data.TenantId = message.TenantId;
             busPublisher.Send(new DeleteUser(message.TenantId, message.Email, message.CommandingUserEmail), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
@@ -88,7 +79,7 @@ namespace Ranger.Services.Operations
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             busPublisher.Send(new SendPusherDomainUserPredefinedNotification("ForceSignoutNotification", Data.TenantId, Data.Email), CorrelationContext.Empty);
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Successfully deleted user {Data.Email}", Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(EVENT_NAME, $"Successfully deleted user {Data.Email}", Data.TenantId, Data.Initiator, Operations.Data.OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             Complete();
             return Task.CompletedTask;
         }
