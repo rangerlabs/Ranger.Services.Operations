@@ -23,12 +23,11 @@ namespace Ranger.Services.Operations
                 throw new System.ArgumentException($"{nameof(password)} was null or whitespace");
             }
 
-            this.TenantId = tenantId;
+            TenantId = tenantId;
             this.Email = email;
             this.Password = password;
 
         }
-        public string TenantId { get; set; }
         public string Email { get; }
         public string Password { get; }
 
