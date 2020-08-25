@@ -118,12 +118,11 @@ namespace Ranger.Services.Operations
                 .As(typeof(IMessageHandler<>));
         }
 
-        public void Configure(IApplicationBuilder app, IHostApplicationLifetime applicationLifetime, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostApplicationLifetime applicationLifetime)
         {
-            this.loggerFactory = loggerFactory;
-
             app.UseSwagger("v1", "Operations API");
             app.UseAutoWrapper();
+            app.UseUnhandedExceptionLogger();
             app.UseRouting();
             app.UseAuthentication();
             app.UseEndpoints(endpoints =>
