@@ -135,7 +135,7 @@ namespace Ranger.Services.Operations
                 endpoints.MapRabbitMQHealthCheck();
             });
 
-            this.busSubscriber = app.UseRabbitMQ(applicationLifetime)
+            this.busSubscriber = app.UseRabbitMQ()
                 .SubscribeAllMessages();
         }
     }
