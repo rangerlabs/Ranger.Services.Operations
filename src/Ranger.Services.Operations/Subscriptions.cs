@@ -13,11 +13,11 @@ namespace Ranger.Services.Operations
 
         public static IBusSubscriber SubscribeAllMessages(this IBusSubscriber subscriber) => subscriber.SubscribeAllCommands().SubscribeAllEvents();
 
-        private static IBusSubscriber SubscribeAllCommands(this IBusSubscriber subscriber) => subscriber.SubscribeAllMessages<ICommand>(nameof(IBusSubscriber.SubscribeCommand));
+        private static IBusSubscriber SubscribeAllCommands(this IBusSubscriber subscriber) => subscriber.SubscribeAllMessages<ICommand>(nameof(IBusSubscriber.SubscribeCommand), new[] { typeof(Func<ICommand, RangerException, IRejectedEvent>) });
 
-        private static IBusSubscriber SubscribeAllEvents(this IBusSubscriber subscriber) => subscriber.SubscribeAllMessages<IEvent>(nameof(IBusSubscriber.SubscribeEvent));
+        private static IBusSubscriber SubscribeAllEvents(this IBusSubscriber subscriber) => subscriber.SubscribeAllMessages<IEvent>(nameof(IBusSubscriber.SubscribeEvent), new[] { typeof(Func<IEvent, RangerException, IRejectedEvent>) });
 
-        private static IBusSubscriber SubscribeAllMessages<TMessage>(this IBusSubscriber subscriber, string subscribeMethod)
+        private static IBusSubscriber SubscribeAllMessages<TMessage>(this IBusSubscriber subscriber, string subscribeMethod, Type[] signature)
             where TMessage : IMessage
         {
 
@@ -26,8 +26,8 @@ namespace Ranger.Services.Operations
                 .Where(t => t.IsClass && typeof(TMessage).IsAssignableFrom(t))
                 .ToList();
 
-            var signature = new[] { typeof(Func<TMessage, RangerException, IRejectedEvent>) };
-            messageTypes.ForEach(mt => subscriber.GetType()
+            messageTypes.ForEach(mt =>
+                subscriber.GetType()
                .GetMethod(subscribeMethod, signature)
                .MakeGenericMethod(mt)
                .Invoke(subscriber,
