@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Ranger.Common;
 using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations
@@ -16,16 +17,18 @@ namespace Ranger.Services.Operations
 
         private static IBusSubscriber SubscribeAllEvents(this IBusSubscriber subscriber) => subscriber.SubscribeAllMessages<IEvent>(nameof(IBusSubscriber.SubscribeEvent));
 
-        private static IBusSubscriber SubscribeAllMessages<TMessage>
-            (this IBusSubscriber subscriber, string subscribeMethod)
+        private static IBusSubscriber SubscribeAllMessages<TMessage>(this IBusSubscriber subscriber, string subscribeMethod)
+            where TMessage : IMessage
         {
+
             var messageTypes = MessagesAssembly
                 .GetTypes()
                 .Where(t => t.IsClass && typeof(TMessage).IsAssignableFrom(t))
                 .ToList();
 
+            var signature = new[] { typeof(Func<TMessage, RangerException, IRejectedEvent>) };
             messageTypes.ForEach(mt => subscriber.GetType()
-               .GetMethod(subscribeMethod)
+               .GetMethod(subscribeMethod, signature)
                .MakeGenericMethod(mt)
                .Invoke(subscriber,
                    new object[] { null }));
