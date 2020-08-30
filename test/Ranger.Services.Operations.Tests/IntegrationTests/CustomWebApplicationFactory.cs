@@ -9,40 +9,43 @@ using Microsoft.Extensions.Logging;
 using Ranger.Services.Operations;
 using Ranger.Services.Operations.Data;
 
-public class CustomWebApplicationFactory
-    : WebApplicationFactory<Startup>
+namespace Ranger.Services.Operations.Tests
 {
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    public class CustomWebApplicationFactory
+        : WebApplicationFactory<Startup>
     {
-        builder.UseEnvironment(Environments.Production);
-
-        builder.ConfigureAppConfiguration((context, conf) =>
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
-            conf.SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
-                .AddEnvironmentVariables();
-        });
+            builder.UseEnvironment(Environments.Production);
 
-        builder.ConfigureServices(services =>
-        {
-            var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .Build();
-
-            services.AddDbContext<OperationsDbContext>(options =>
-                {
-                    options.UseNpgsql(configuration["cloudSql:ConnectionString"]);
-                });
-
-            var sp = services.BuildServiceProvider();
-            using (var scope = sp.CreateScope())
+            builder.ConfigureAppConfiguration((context, conf) =>
             {
-                var logger = scope.ServiceProvider.GetService<ILogger<CustomWebApplicationFactory>>();
-                logger.LogInformation("ConnectionString: " + configuration["cloudSql:ConnectionString"]);
-                var context = scope.ServiceProvider.GetRequiredService<OperationsDbContext>();
-                context.Database.Migrate();
-            }
-        });
+                conf.SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json")
+                    .AddEnvironmentVariables();
+            });
+
+            builder.ConfigureServices(services =>
+            {
+                var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+                services.AddDbContext<OperationsDbContext>(options =>
+                    {
+                        options.UseNpgsql(configuration["cloudSql:ConnectionString"]);
+                    });
+
+                var sp = services.BuildServiceProvider();
+                using (var scope = sp.CreateScope())
+                {
+                    var logger = scope.ServiceProvider.GetService<ILogger<CustomWebApplicationFactory>>();
+                    logger.LogInformation("ConnectionString: " + configuration["cloudSql:ConnectionString"]);
+                    var context = scope.ServiceProvider.GetRequiredService<OperationsDbContext>();
+                    context.Database.Migrate();
+                }
+            });
+        }
     }
 }

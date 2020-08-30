@@ -4,7 +4,7 @@ using Ranger.Services.Operations.Data;
 using Shouldly;
 using Xunit;
 
-namespace Ranger.Services.Tenants.Tests.IntegrationTests
+namespace Ranger.Services.Operations.Tests
 {
     public class HandlerTests : IClassFixture<CustomWebApplicationFactory>
     {
@@ -22,7 +22,7 @@ namespace Ranger.Services.Tenants.Tests.IntegrationTests
         }
 
         [Fact]
-        public Task CreateTenantHandler_ReceivesMessage_CreatesTenant()
+        public Task OperationsService_Starts()
         {
             return Task.CompletedTask;
         }
