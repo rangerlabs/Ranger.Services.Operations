@@ -31,7 +31,6 @@ namespace Ranger.Services.Operations
         private readonly IWebHostEnvironment Environment;
         private readonly IConfiguration configuration;
         private ILoggerFactory loggerFactory;
-        private IBusSubscriber busSubscriber;
 
         public Startup(IWebHostEnvironment environment, IConfiguration configuration)
         {
@@ -135,8 +134,7 @@ namespace Ranger.Services.Operations
                 endpoints.MapRabbitMQHealthCheck();
             });
 
-            this.busSubscriber = app.UseRabbitMQ()
-                .SubscribeAllMessages();
+            app.UseRabbitMQ().SubscribeAllMessages();
         }
     }
 }

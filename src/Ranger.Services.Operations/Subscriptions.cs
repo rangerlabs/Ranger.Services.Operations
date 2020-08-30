@@ -17,7 +17,7 @@ namespace Ranger.Services.Operations
 
         private static IBusSubscriber SubscribeAllEvents(this IBusSubscriber subscriber) => subscriber.SubscribeAllMessages<IEvent>(nameof(IBusSubscriber.SubscribeEvent), new[] { typeof(Func<IEvent, RangerException, IRejectedEvent>) });
 
-        private static IBusSubscriber SubscribeAllMessages<TMessage>(this IBusSubscriber subscriber, string subscribeMethod, Type[] signature)
+        public static IBusSubscriber SubscribeAllMessages<TMessage>(this IBusSubscriber subscriber, string subscribeMethod, Type[] signature)
             where TMessage : IMessage
         {
 
@@ -27,11 +27,12 @@ namespace Ranger.Services.Operations
                 .ToList();
 
             messageTypes.ForEach(mt =>
+            {
                 subscriber.GetType()
-               .GetMethod(subscribeMethod, signature)
-               .MakeGenericMethod(mt)
-               .Invoke(subscriber,
-                   new object[] { null }));
+                    .GetMethod(subscribeMethod, 1, signature)
+                    .MakeGenericMethod(mt)
+                    .Invoke(subscriber, new object[] { null });
+            });
 
             return subscriber;
         }
