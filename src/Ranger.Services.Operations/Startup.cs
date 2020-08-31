@@ -19,6 +19,7 @@ using Newtonsoft.Json.Serialization;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 using Ranger.ApiUtilities;
+using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.Monitoring.HealthChecks;
 using Ranger.RabbitMQ;
