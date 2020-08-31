@@ -22,9 +22,7 @@ namespace Ranger.Services.Operations.Tests
         }
 
         [Fact]
-        public Task OperationsService_Starts()
-        {
-            return Task.CompletedTask;
-        }
+        public void Operations_Starts()
+        { }
     }
 }

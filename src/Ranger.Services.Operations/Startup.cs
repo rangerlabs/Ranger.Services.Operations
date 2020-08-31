@@ -87,12 +87,21 @@ namespace Ranger.Services.Operations
                     options.ApiName = "operationsApi";
                     options.RequireHttpsMetadata = false;
                 });
-
-            services.AddDataProtection()
-                .SetApplicationName("Operations")
-                .ProtectKeysWithCertificate(new X509Certificate2(configuration["DataProtectionCertPath:Path"]))
-                .UnprotectKeysWithAnyCertificate(new X509Certificate2(configuration["DataProtectionCertPath:Path"]))
-                .PersistKeysToDbContext<OperationsDbContext>();
+            // Workaround for MAC validation issues on MacOS
+            if (configuration.IsIntegrationTesting())
+            {
+                services.AddDataProtection()
+                   .SetApplicationName("Operations")
+                   .PersistKeysToDbContext<OperationsDbContext>();
+            }
+            else
+            {
+                services.AddDataProtection()
+                    .SetApplicationName("Operations")
+                    .ProtectKeysWithCertificate(new X509Certificate2(configuration["DataProtectionCertPath:Path"]))
+                    .UnprotectKeysWithAnyCertificate(new X509Certificate2(configuration["DataProtectionCertPath:Path"]))
+                    .PersistKeysToDbContext<OperationsDbContext>();
+            }
 
             services.AddChronicle(b =>
             {
