@@ -105,6 +105,8 @@ namespace Ranger.Services.Operations
             {
                 b.UseSagaLog<EntityFrameworkSagaLogRepository>();
                 b.UseSagaStateRepository<EntityFrameworkSagaStateRepository>();
+                var config = configuration.GetOptions<ChronicleConfiguration>("chronicleConfiguration");
+                b.UseChronicleConfiguration(config);
             });
 
             services.AddLiveHealthCheck();
