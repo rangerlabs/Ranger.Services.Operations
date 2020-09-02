@@ -4,7 +4,6 @@ using Chronicle;
 using Microsoft.Extensions.Logging;
 using Ranger.RabbitMQ;
 using Ranger.RabbitMQ.BusPublisher;
-using Ranger.Services.Operations.Data;
 
 namespace Ranger.Services.Operations
 {
@@ -27,8 +26,8 @@ namespace Ranger.Services.Operations
         {
             if (@event.BelongsToSaga())
             {
+                logger.LogDebug("Event {EventName} was found to be an action in one or more sagas", @event.GetType().Name);
                 var sagaContext = SagaContext.FromCorrelationContext(context);
-
                 try
                 {
                     await sagaCoordinator.ProcessAsync(@event, context: sagaContext);
@@ -42,28 +41,7 @@ namespace Ranger.Services.Operations
                     logger.LogError(sagaContext.SagaContextError.Exception, "An exception was thrown resulting in a saga rejection. Ack'ing message");
                 }
             }
-
-            // switch (@event)
-            // {
-            //     case IRejectedEvent rejectedSingleEvent:
-            //         busPublisher.Send<SendPusherPrivateFrontendNotification>(
-            //             new SendPusherPrivateFrontendNotification(
-            //                 rejectedSingleEvent.GetType().Name,
-            //                 context.Domain,
-            //                 context.UserEmail,
-            //                 OperationsStateEnum.Rejected),
-            //             context);
-            //         return;
-            //     case IEvent completedSingleEvent:
-            //         busPublisher.Send<SendPusherPrivateFrontendNotification>(
-            //             new SendPusherPrivateFrontendNotification(
-            //                 completedSingleEvent.GetType().Name,
-            //                 context.Domain,
-            //                 context.UserEmail,
-            //                 OperationsStateEnum.Rejected),
-            //             context);
-            //         return;
-            // }
+            logger.LogDebug("Event {EventName} is not an action in any sagas", @event.GetType().Name);
         }
     }
 }

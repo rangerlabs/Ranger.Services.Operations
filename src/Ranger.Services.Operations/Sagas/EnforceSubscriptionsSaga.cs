@@ -58,7 +58,7 @@ namespace Ranger.Services.Operations.Sagas
 
         public Task HandleAsync(TenantLimitDetailsComputed message, ISagaContext context)
         {
-            logger.LogDebug($"Calling compensate for message '{message.GetType()}'");
+            logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             Data.TenantLimitDetails = message.TenantLimitDetails;
             busPublisher.Send(
                 new EnforceProjectResourceLimits(Data.TenantLimitDetails.Select(tl => (tl.Item1, tl.Item2.Projects))),

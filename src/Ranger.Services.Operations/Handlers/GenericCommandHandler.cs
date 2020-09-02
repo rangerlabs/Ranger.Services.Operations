@@ -21,9 +21,11 @@ namespace Ranger.Services.Operations
         {
             if (!command.BelongsToSaga())
             {
+                logger.LogDebug("Command {CommandName} is not an action in any sagas", command.GetType().Name);
                 return;
             }
 
+            logger.LogDebug("Command {CommandName} was found to be an action in one or more sagas", command.GetType().Name);
             var sagaContext = SagaContext.FromCorrelationContext(context);
             try
             {
