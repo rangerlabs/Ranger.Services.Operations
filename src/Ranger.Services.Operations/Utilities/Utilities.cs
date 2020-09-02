@@ -9,7 +9,7 @@ namespace Ranger.Services.Operations
 {
     public static class Utilities
     {
-        public static async Task<IEnumerable<string>> GetProjectNamesForAuthorizedProjectsAsync(string domain, string email, RolesEnum role, IEnumerable<Guid> authorizedProjects, ProjectsHttpClient projectsClient)
+        public static async Task<IEnumerable<string>> GetProjectNamesForAuthorizedProjectsAsync(string domain, string email, RolesEnum role, IEnumerable<Guid> authorizedProjects, IProjectsHttpClient projectsClient)
         {
             var apiResponse = await projectsClient.GetAllProjectsForUserAsync<IEnumerable<ProjectModel>>(domain, email).ConfigureAwait(false);
 

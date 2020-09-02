@@ -27,9 +27,9 @@ namespace Ranger.Services.Operations.Sagas
     {
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<DeleteTenantSaga> logger;
-        private readonly IdentityHttpClient identityClient;
+        private readonly IIdentityHttpClient identityClient;
 
-        public DeleteTenantSaga(IBusPublisher busPublisher, IdentityHttpClient identityClient, ILogger<DeleteTenantSaga> logger)
+        public DeleteTenantSaga(IBusPublisher busPublisher, IIdentityHttpClient identityClient, ILogger<DeleteTenantSaga> logger)
         {
             this.identityClient = identityClient;
             this.busPublisher = busPublisher;

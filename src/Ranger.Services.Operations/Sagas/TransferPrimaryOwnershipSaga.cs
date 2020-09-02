@@ -34,9 +34,9 @@ namespace Ranger.Services.Operations.Sagas
         const string NEW_OWNER_EVENT_NAME = "transfer-ownership-new-primary-owner";
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<TransferPrimaryOwnershipSaga> logger;
-        private readonly IdentityHttpClient identityClient;
+        private readonly IIdentityHttpClient identityClient;
 
-        public TransferPrimaryOwnershipSaga(IBusPublisher busPublisher, IdentityHttpClient identityClient, ILogger<TransferPrimaryOwnershipSaga> logger)
+        public TransferPrimaryOwnershipSaga(IBusPublisher busPublisher, IIdentityHttpClient identityClient, ILogger<TransferPrimaryOwnershipSaga> logger)
         {
             this.busPublisher = busPublisher;
             this.identityClient = identityClient;

@@ -26,10 +26,10 @@ namespace Ranger.Services.Operations
         const string EVENT_NAME = "user-created";
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<CreateUserSaga> logger;
-        private readonly ProjectsHttpClient projectsClient;
-        private readonly IdentityHttpClient identityClient;
+        private readonly IProjectsHttpClient projectsClient;
+        private readonly IIdentityHttpClient identityClient;
 
-        public CreateUserSaga(IBusPublisher busPublisher, IdentityHttpClient identityClient, ProjectsHttpClient projectsClient, ILogger<CreateUserSaga> logger)
+        public CreateUserSaga(IBusPublisher busPublisher, IIdentityHttpClient identityClient, IProjectsHttpClient projectsClient, ILogger<CreateUserSaga> logger)
         {
             this.identityClient = identityClient;
             this.projectsClient = projectsClient;

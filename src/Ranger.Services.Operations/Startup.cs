@@ -67,7 +67,6 @@ namespace Ranger.Services.Operations
 
             var identityAuthority = configuration["httpClient:identityAuthority"];
             services.AddPollyPolicyRegistry();
-            services.AddTenantsHttpClient("http://tenants:8082", identityAuthority, "tenantsApi", "cKprgh9wYKWcsm");
             services.AddProjectsHttpClient("http://projects:8086", identityAuthority, "projectsApi", "usGwT8Qsp4La2");
             services.AddIdentityHttpClient("http://identity:5000", identityAuthority, "IdentityServerApi", "89pCcXHuDYTXY");
 

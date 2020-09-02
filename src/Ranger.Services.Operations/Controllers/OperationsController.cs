@@ -13,10 +13,10 @@ namespace Ranger.Services.Operations.Controllers
     public class OperationsController : ControllerBase
     {
         private readonly IOperationsRepository sagaStateRepository;
-        private readonly TenantsHttpClient tenantsClient;
+        private readonly ITenantsHttpClient tenantsClient;
         private readonly ILogger<OperationsController> logger;
 
-        public OperationsController(IOperationsRepository sagaStateRepository, TenantsHttpClient tenantsClient, ILogger<OperationsController> logger)
+        public OperationsController(IOperationsRepository sagaStateRepository, ITenantsHttpClient tenantsClient, ILogger<OperationsController> logger)
         {
             this.sagaStateRepository = sagaStateRepository;
             this.tenantsClient = tenantsClient;

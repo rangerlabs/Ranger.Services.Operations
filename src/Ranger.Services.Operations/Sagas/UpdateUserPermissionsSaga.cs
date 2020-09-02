@@ -24,9 +24,9 @@ namespace Ranger.Services.Operations.Sagas
         const string EVENT_NAME = "user-updated";
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<UpdateUserPermissionsSaga> logger;
-        private readonly ProjectsHttpClient projectsClient;
+        private readonly IProjectsHttpClient projectsClient;
 
-        public UpdateUserPermissionsSaga(IBusPublisher busPublisher, ProjectsHttpClient projectsClient, ILogger<UpdateUserPermissionsSaga> logger)
+        public UpdateUserPermissionsSaga(IBusPublisher busPublisher, IProjectsHttpClient projectsClient, ILogger<UpdateUserPermissionsSaga> logger)
         {
             this.projectsClient = projectsClient;
             this.logger = logger;

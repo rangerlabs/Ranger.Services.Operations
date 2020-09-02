@@ -22,7 +22,7 @@ namespace Ranger.Services.Operations
         private readonly ILogger<CreateIntegrationSaga> logger;
         private readonly IBusPublisher busPublisher;
 
-        public CreateIntegrationSaga(IBusPublisher busPublisher, TenantsHttpClient tenantsClient, ILogger<CreateIntegrationSaga> logger)
+        public CreateIntegrationSaga(IBusPublisher busPublisher, ILogger<CreateIntegrationSaga> logger)
         {
             this.busPublisher = busPublisher;
             this.logger = logger;

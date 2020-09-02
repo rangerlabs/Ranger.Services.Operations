@@ -18,9 +18,9 @@ namespace Ranger.Services.Operations
         const string EVENT_NAME = "account-deleted";
         private readonly IBusPublisher busPublisher;
         private readonly ILogger<CreateUserSaga> logger;
-        private readonly IdentityHttpClient identityClient;
+        private readonly IIdentityHttpClient identityClient;
 
-        public DeleteAccountSaga(IBusPublisher busPublisher, IdentityHttpClient identityClient, ILogger<CreateUserSaga> logger)
+        public DeleteAccountSaga(IBusPublisher busPublisher, IIdentityHttpClient identityClient, ILogger<CreateUserSaga> logger)
         {
             this.identityClient = identityClient;
             this.logger = logger;
