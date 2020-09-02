@@ -5,6 +5,7 @@ using Chronicle;
 using Microsoft.Extensions.Logging;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
+using Ranger.RabbitMQ.BusPublisher;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Identity;
 using Ranger.Services.Operations.Messages.Notifications;

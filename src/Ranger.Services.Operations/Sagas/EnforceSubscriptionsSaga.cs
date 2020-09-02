@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
 using Ranger.RabbitMQ;
+using Ranger.RabbitMQ.BusPublisher;
 using Ranger.Services.Operations.Messages.Geofences;
 using Ranger.Services.Operations.Messages.Integrations.Commands;
 using Ranger.Services.Operations.Messages.Projects.Events;

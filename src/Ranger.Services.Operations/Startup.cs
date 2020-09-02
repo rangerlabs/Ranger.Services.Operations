@@ -74,9 +74,7 @@ namespace Ranger.Services.Operations
             services.AddDbContext<OperationsDbContext>(options =>
             {
                 options.UseNpgsql(configuration["cloudSql:ConnectionString"]);
-            },
-                ServiceLifetime.Transient
-            );
+            });
 
             services.AddTransient<IOperationsDbContextInitializer, OperationsDbContextInitializer>();
             services.AddTransient<IOperationsRepository, OperationsRepository>();

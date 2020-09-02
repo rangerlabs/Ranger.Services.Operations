@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
 using Ranger.RabbitMQ;
+using Ranger.RabbitMQ.BusPublisher;
 using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Notifications.Commands.Email;
 using Ranger.Services.Operations.Messages.Subscriptions.Commands;

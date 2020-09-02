@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Ranger.Common;
 using Ranger.InternalHttpClient;
 using Ranger.RabbitMQ;
+using Ranger.RabbitMQ.BusPublisher;
 using Ranger.Services.Operations.Messages.Notifications;
 using Ranger.Services.Operations.Messages.Operations;
 using Ranger.Services.Operations.Messages.Projects;

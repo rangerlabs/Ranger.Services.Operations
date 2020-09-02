@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Ranger.Common;
 using Ranger.RabbitMQ;
+using Ranger.RabbitMQ.BusSubscriber;
 
 namespace Ranger.Services.Operations
 {
