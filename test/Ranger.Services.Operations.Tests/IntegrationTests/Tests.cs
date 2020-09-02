@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Chronicle;
 using Ranger.RabbitMQ;
 using Ranger.RabbitMQ.BusPublisher;
 using Ranger.RabbitMQ.BusSubscriber;
@@ -26,5 +27,13 @@ namespace Ranger.Services.Operations.Tests
         [Fact]
         public void Operations_Starts()
         { }
+
+
+        [Fact]
+        public void ChronicleConfiguration_AllowConcurrentWrites_IsFalse()
+        {
+            var chronicleConfig = _factory.Services.GetService(typeof(IChronicleConfiguration)) as ChronicleConfiguration;
+            chronicleConfig.AllowConcurrentWrites.ShouldBeFalse();
+        }
     }
 }
