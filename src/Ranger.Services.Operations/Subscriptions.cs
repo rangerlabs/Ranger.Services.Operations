@@ -23,7 +23,8 @@ namespace Ranger.Services.Operations
             where TMessage : IMessage
         {
 
-            var messageTypes = Subscriptions.SagaMessageTypes<TMessage>();
+            var messageTypes = Subscriptions.SagaMessageTypes();
+            var messages = messageTypes.Where(t => (typeof(TMessage).IsAssignableFrom(t)));
 
             messageTypes.ForEach(mt =>
             {
@@ -36,8 +37,7 @@ namespace Ranger.Services.Operations
             return subscriber;
         }
 
-        private static List<Type> SagaMessageTypes<TMessage>()
-            where TMessage : IMessage
+        private static List<Type> SagaMessageTypes()
         {
             var MessagesAssembly = typeof(Subscriptions).Assembly;
             var typeFilter = new TypeFilter(ISagaActionFilter);
