@@ -24,9 +24,9 @@ namespace Ranger.Services.Operations
         {
 
             var messageTypes = Subscriptions.SagaMessageTypes();
-            var messages = messageTypes.Where(t => (typeof(TMessage).IsAssignableFrom(t)));
+            var messages = messageTypes.Where(t => (typeof(TMessage).IsAssignableFrom(t))).ToList();
 
-            messageTypes.ForEach(mt =>
+            messages.ForEach(mt =>
             {
                 subscriber.GetType()
                     .GetMethod(subscribeMethod)
