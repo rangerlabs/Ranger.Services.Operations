@@ -35,5 +35,6 @@ namespace Ranger.Services.Operations.Tests
             var chronicleConfig = _factory.Services.GetService(typeof(IChronicleConfiguration)) as ChronicleConfiguration;
             chronicleConfig.AllowConcurrentWrites.ShouldBeFalse();
         }
+
     }
 }
