@@ -112,9 +112,9 @@ namespace Ranger.Services.Operations
         }
     }
 
-    public class CreateGeofenceData : BaseSagaData
+    public class CreateGeofenceData : BaseSagaData, IResourceSagaData
     {
         public CreateGeofenceSagaInitializer Message;
-        public Guid Id;
+        public Guid Id { get; set; }
     }
 }

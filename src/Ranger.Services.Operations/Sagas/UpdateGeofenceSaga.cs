@@ -78,6 +78,7 @@ namespace Ranger.Services.Operations.Sagas
         public async Task HandleAsync(GeofenceUpdated message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
+            Data.Id = message.Id;
             if (Data.FrontendRequest)
             {
                 //TODO: This timed out once and could happen again. determine best handline for time outs system wide.
@@ -112,9 +113,10 @@ namespace Ranger.Services.Operations.Sagas
         }
     }
 
-    public class UpsertGeofenceData : BaseSagaData
+    public class UpsertGeofenceData : BaseSagaData, IResourceSagaData
     {
         public bool FrontendRequest;
         public string ExternalId;
+        public Guid Id { get; set; }
     }
 }

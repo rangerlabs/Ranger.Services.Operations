@@ -100,7 +100,7 @@ namespace Ranger.Services.Operations
         public async Task HandleAsync(UserCreated message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
-            Data.UserId = message.UserId;
+            Data.Id = message.UserId;
             Data.Token = message.Token;
 
             if (Data.NewRole != RolesEnum.User)
@@ -111,7 +111,7 @@ namespace Ranger.Services.Operations
             {
                 if (Data.Message.AuthorizedProjects.Count() > 0)
                 {
-                    busPublisher.Send(new UpdateUserProjects(Data.TenantId, Data.Message.AuthorizedProjects, Data.UserId, Data.Message.Email, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+                    busPublisher.Send(new UpdateUserProjects(Data.TenantId, Data.Message.AuthorizedProjects, Data.Id, Data.Message.Email, Data.Initiator), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
                 }
                 else
                 {
@@ -162,7 +162,7 @@ namespace Ranger.Services.Operations
             await Task.Run(() =>
             {
                 var sendNewUserEmail = new SendNewUserEmail(
-                    Data.UserId,
+                    Data.Id,
                     Data.Message.Email,
                     Data.Message.FirstName,
                     Data.TenantId,
@@ -177,7 +177,7 @@ namespace Ranger.Services.Operations
 
     public class CreateUserData : BaseSagaData
     {
-        public string UserId { get; set; }
+        public string Id { get; set; }
         public string Token { get; set; }
         public RolesEnum NewRole { get; set; }
         public CreateUserSagaInitializer Message { get; set; }

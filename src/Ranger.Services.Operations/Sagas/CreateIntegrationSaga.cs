@@ -81,10 +81,10 @@ namespace Ranger.Services.Operations
         }
     }
 
-    public class CreateIntegrationData : BaseSagaData
+    public class CreateIntegrationData : BaseSagaData, IResourceSagaData
     {
         public CreateIntegrationSagaInitializer Message;
-        public Guid Id;
+        public Guid Id { get; set; }
         public string Name;
     }
 }
