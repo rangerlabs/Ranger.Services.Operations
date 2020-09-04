@@ -150,7 +150,7 @@ namespace Ranger.Services.Operations.Sagas
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
             busPublisher.Send(new CompletePrimaryOwnerTransfer(Data.TenantId, Data.Initiator, PrimaryOwnerTransferStateEnum.Refused), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             busPublisher.Send(new SendPrimaryOwnerTransferRefusedEmails(Data.TransferUserEmail, Data.OwnerUser.Email, Data.TransferUser.FirstName, Data.OwnerUser.FirstName, Data.OwnerUser.LastName, Data.TenantId), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
-            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, "The Primary Owner role was refused by the recipient", Data.TenantId, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
+            busPublisher.Send(new SendPusherDomainUserCustomNotification(FORMER_OWNER_EVENT_NAME, "The Primary Owner role was refused by the recipient", Data.TenantId, Data.Initiator, OperationsStateEnum.Rejected), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             Complete();
             return Task.CompletedTask;
         }
