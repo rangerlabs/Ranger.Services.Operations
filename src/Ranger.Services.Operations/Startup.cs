@@ -117,7 +117,7 @@ namespace Ranger.Services.Operations
 
         public void ConfigureContainer(ContainerBuilder builder)
         {
-            builder.AddRabbitMq();
+            builder.AddRabbitMq<Startup>();
             builder.RegisterGeneric(typeof(GenericEventHandler<>))
                 .As(typeof(IMessageHandler<>));
             builder.RegisterGeneric(typeof(GenericCommandHandler<>))
