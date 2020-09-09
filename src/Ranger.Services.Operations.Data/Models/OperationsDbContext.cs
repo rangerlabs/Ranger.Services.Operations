@@ -4,10 +4,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Ranger.Common;
+using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations.Data
 {
-    public class OperationsDbContext : DbContext, IDataProtectionKeyContext
+    public class OperationsDbContext : DbContext, IDataProtectionKeyContext, IOutboxStore
     {
 
         private readonly IDataProtectionProvider dataProtectionProvider;
@@ -19,6 +20,7 @@ namespace Ranger.Services.Operations.Data
         public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
         public DbSet<SagaLogData> SagaLogDatas { get; set; }
         public DbSet<SagaState> SagaStates { get; set; }
+        public DbSet<OutboxMessage> Outbox { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

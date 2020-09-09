@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ranger.Services.Operations.Data;
@@ -9,9 +10,10 @@ using Ranger.Services.Operations.Data;
 namespace Ranger.Services.Operations.Data.Migrations
 {
     [DbContext(typeof(OperationsDbContext))]
-    partial class OperationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200909204148_AddOutboxSupport")]
+    partial class AddOutboxSupport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
