@@ -20,7 +20,8 @@ namespace Ranger.Services.Operations.Data
         public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
         public DbSet<SagaLogData> SagaLogDatas { get; set; }
         public DbSet<SagaState> SagaStates { get; set; }
-        public DbSet<OutboxMessage> Outbox { get; set; }
+        public DbSet<OutboxMessage> OutboxMessages { get; set; }
+        public DbSet<RangerRabbitMessage> RangerRabbitMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
