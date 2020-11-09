@@ -51,11 +51,9 @@ namespace Ranger.Services.Operations.Messages.Geofences
             }
 
             this.CommandingUserEmailOrTokenPrefix = commandingUserEmailOrTokenPrefix;
-
             this.Coordinates = coordinates;
             this.Shape = shape;
             this.Radius = radius;
-
             this.TenantId = tenantId;
             this.ExternalId = externalId;
             this.ProjectId = projectId;
