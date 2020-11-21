@@ -10,15 +10,15 @@ using Ranger.Services.Operations.Messages.Operations.Commands;
 
 namespace Ranger.Services.Operations
 {
-    public class BulkDeleteGeofencesSaga : Saga<BulkDeleteGeofencesSage>,
+    public class BulkDeleteGeofencesSaga : Saga<BulkDeleteGeofencesSagaData>,
         ISagaStartAction<BulkDeleteGeofencesSagaInitializer>,
         ISagaAction<GeofencesBulkDeleted>,
         ISagaAction<BulkDeleteGeofencesRejected>
     {
-        private readonly ILogger<CreateGeofenceSaga> logger;
+        private readonly ILogger<BulkDeleteGeofencesSaga> logger;
         private readonly IBusPublisher busPublisher;
 
-        public BulkDeleteGeofencesSaga(IBusPublisher busPublisher, ILogger<CreateGeofenceSaga> logger)
+        public BulkDeleteGeofencesSaga(IBusPublisher busPublisher, ILogger<BulkDeleteGeofencesSaga> logger)
         {
             this.busPublisher = busPublisher;
             this.logger = logger;
@@ -89,7 +89,7 @@ namespace Ranger.Services.Operations
         }
     }
 
-    public class BulkDeleteGeofencesSage : BaseSagaData
+    public class BulkDeleteGeofencesSagaData : BaseSagaData
     {
         public bool FrontendRequest { get; set; }
     }

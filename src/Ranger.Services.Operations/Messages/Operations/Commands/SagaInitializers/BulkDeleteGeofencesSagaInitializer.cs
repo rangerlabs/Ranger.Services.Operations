@@ -24,9 +24,9 @@ namespace Ranger.Services.Operations.Messages.Operations.Commands
             {
                 throw new System.ArgumentException($"{nameof(tenantid)} was null or whitespace");
             }
-            if (externalIds is null || externalIds.Count() is 0)
+            if (externalIds is null || !externalIds.Any())
             {
-                throw new System.ArgumentException($"{nameof(externalIds)} must not be default or empty");
+                throw new System.ArgumentException($"{nameof(externalIds)} must not be null or empty");
             }
             FrontendRequest = frontendRequest;
             CommandingUserEmailOrTokenPrefix = commandingUserEmailOrTokenPrefix;
