@@ -8,7 +8,7 @@ using Ranger.Services.Operations.Data;
 using Ranger.Services.Operations.Messages.Geofences;
 using Ranger.Services.Operations.Messages.Operations.Commands;
 
-namespace Ranger.Services.Operations
+namespace Ranger.Services.Operations.Sagas
 {
     public class BulkDeleteGeofencesSaga : Saga<BulkDeleteGeofencesSagaData>,
         ISagaStartAction<BulkDeleteGeofencesSagaInitializer>,

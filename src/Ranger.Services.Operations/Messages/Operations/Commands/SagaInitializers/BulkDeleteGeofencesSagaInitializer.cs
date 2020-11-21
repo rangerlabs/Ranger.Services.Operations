@@ -11,7 +11,7 @@ namespace Ranger.Services.Operations.Messages.Operations.Commands
         public BulkDeleteGeofencesSagaInitializer(
             bool frontendRequest,
             string commandingUserEmailOrTokenPrefix,
-            string tenantid,
+            string tenantId,
             Guid projectId,
             IEnumerable<string> externalIds)
 
@@ -20,9 +20,9 @@ namespace Ranger.Services.Operations.Messages.Operations.Commands
             {
                 throw new System.ArgumentException($"{nameof(commandingUserEmailOrTokenPrefix)} was null or whitespace");
             }
-            if (string.IsNullOrWhiteSpace(tenantid))
+            if (string.IsNullOrWhiteSpace(tenantId))
             {
-                throw new System.ArgumentException($"{nameof(tenantid)} was null or whitespace");
+                throw new System.ArgumentException($"{nameof(tenantId)} was null or whitespace");
             }
             if (externalIds is null || !externalIds.Any())
             {
@@ -30,14 +30,13 @@ namespace Ranger.Services.Operations.Messages.Operations.Commands
             }
             FrontendRequest = frontendRequest;
             CommandingUserEmailOrTokenPrefix = commandingUserEmailOrTokenPrefix;
-            Tenantid = tenantid;
+            TenantId = tenantId;
             ExternalIds = externalIds;
             ProjectId = projectId;
         }
 
         public bool FrontendRequest { get; }
         public string CommandingUserEmailOrTokenPrefix { get; }
-        public string Tenantid { get; }
         public IEnumerable<string> ExternalIds { get; }
         public Guid ProjectId { get; }
     }
