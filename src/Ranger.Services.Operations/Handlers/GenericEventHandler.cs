@@ -41,7 +41,9 @@ namespace Ranger.Services.Operations
                     logger.LogError(sagaContext.SagaContextError.Exception, "An exception was thrown resulting in a saga rejection. Ack'ing message");
                 }
             }
-            logger.LogDebug("Event {EventName} is not an action in any sagas", @event.GetType().Name);
+            else {
+                logger.LogDebug("Event {EventName} is not an action in any sagas", @event.GetType().Name);
+            }
         }
     }
 }
