@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using AutoWrapper.Wrappers;
 using Chronicle;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Ranger.Common;
 using Ranger.InternalHttpClient;
