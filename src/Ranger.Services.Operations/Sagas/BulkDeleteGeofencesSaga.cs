@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Chronicle;
 using Microsoft.Extensions.Logging;
@@ -48,6 +49,7 @@ namespace Ranger.Services.Operations.Sagas
             Data.FrontendRequest = message.FrontendRequest;
             Data.TenantId = message.TenantId;
             Data.Initiator = message.CommandingUserEmailOrTokenPrefix;
+            Data.RequestedExternalIdsToDelete = message.ExternalIds;
             var bulkDeleteGeofence = new BulkDeleteGeofences(message.CommandingUserEmailOrTokenPrefix, message.TenantId, message.ExternalIds, message.ProjectId);
             busPublisher.Send(bulkDeleteGeofence, CorrelationContext.FromId(Guid.Parse(context.SagaId)));
             return Task.CompletedTask;
@@ -56,6 +58,7 @@ namespace Ranger.Services.Operations.Sagas
         public async Task HandleAsync(GeofencesBulkDeleted message, ISagaContext context)
         {
             logger.LogDebug($"Calling handle for message '{message.GetType()}'");
+            Data.DeletedIds = message.DeletedIds;
             if (Data.FrontendRequest)
             {
                 busPublisher.Send(new SendPusherDomainUserCustomNotification("geofences-bulk-deleted", $"Successfully completed bulk delete operation", Data.TenantId, Data.Initiator, OperationsStateEnum.Completed), CorrelationContext.FromId(Guid.Parse(context.SagaId)));
@@ -92,5 +95,7 @@ namespace Ranger.Services.Operations.Sagas
     public class BulkDeleteGeofencesSagaData : BaseSagaData
     {
         public bool FrontendRequest { get; set; }
+        public IEnumerable<string> RequestedExternalIdsToDelete { get; set; }
+        public IEnumerable<Guid> DeletedIds { get; set; }
     }
 }

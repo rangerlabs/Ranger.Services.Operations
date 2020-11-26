@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Ranger.RabbitMQ;
 
 namespace Ranger.Services.Operations
@@ -6,9 +8,9 @@ namespace Ranger.Services.Operations
     public class GeofencesBulkDeleted : IEvent
     {
         public string TenantId { get; }
-        public string ExternalId { get; }
+        public IEnumerable<Guid> DeletedIds { get; }
 
-        public GeofencesBulkDeleted(string tenantId)
+        public GeofencesBulkDeleted(string tenantId, IEnumerable<Guid> deletedIds)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
             {
@@ -16,6 +18,7 @@ namespace Ranger.Services.Operations
             }
 
             this.TenantId = tenantId;
+            this.DeletedIds = deletedIds;
         }
     }
 }
